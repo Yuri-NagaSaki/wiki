@@ -1,0 +1,52 @@
+---
+title: Mikan Sync
+description: Fill in the API Token, publish group ID, and subgroup ID required by AniBT's Mikan sync.
+---
+
+Open [https://mikanani.me](https://mikanani.me), sign in, and click **Account Settings** in the top-right corner.
+
+In **Personal Center** → **Edit Profile**, find **API Token** under **Basic Profile**.
+
+> If there is no API Token yet, click **Generate** on the right.
+
+Copy the **API Token**, paste it into AniBT's Mikan sync settings, and click **Save**.
+
+Then click **【Query the ID of "XXXXXX" from Mikan】**. AniBT will automatically fetch your **publish group ID** and **release group ID**.
+
+![Mikan API Token and ID query](/images/site-sync/mikan-api-token.webp)
+
+## Getting the IDs Manually
+
+In most cases, the automatic query button is enough. The steps below are for manual lookup.
+
+### Publish Group ID
+
+The publish group ID is the number at the end of the publish group page URL.
+
+For example:
+
+```txt
+https://mikanani.me/Home/PublishGroup/359
+```
+
+Here, `359` is the publish group ID.
+
+You can click the **subtitle group** in a list or anime description. The page it opens is the publish group page.
+
+![Mikan publish group ID page](/images/site-sync/mikan-publish-group-id.webp)
+
+### Release Group ID
+
+Using LoliHouse as an example, open any anime list published under the LoliHouse identity.
+
+Then click the **RSS icon** next to the subtitle group name.
+
+The RSS link looks like this:
+
+```txt
+https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370
+```
+
+In `subgroupid=370`, the `370` value is the release group ID.
+
+![Release group ID in Mikan RSS](/images/site-sync/mikan-rss-subgroup-id.webp)
