@@ -1,40 +1,92 @@
 ---
-title: Getting Started
-description: AniBT's positioning and site sync documentation entry point.
+title: Getting started
+description: AniBT is a public anime BitTorrent tracker. This Wiki serves both subtitle groups publishing releases and developers / users consuming the data.
 ---
 
-AniBT is a public anime torrent tracker focused on anime and subtitle groups.
+**AniBT** is a public BitTorrent tracker built for anime, with subtitle groups at the centre. We aim to give fansub teams a reliable place to publish, and to make it easy for users and tools to track new releases automatically.
 
-We want to give subtitle group members a platform for sharing their releases with the community, while helping users automatically find and download the content they want.
+This Wiki is split along two main use cases: **subtitle groups publishing releases** and **users / developers consuming the data**. Read whichever side fits you.
 
-## Site Sync
+---
 
-Use these guides to configure AniBT sync settings for external sites. Each guide covers one site and its required Token, Cookie, or ID values.
+## I'm a subtitle group, I want to publish
+
+Full path: apply → set up site sync → use our tracker when packing torrents → publish via API.
 
 <Cards>
   <Card
-    title="Bangumi Moe Sync"
-    href="/en/docs/site-sync/bangumi"
-    description="Copy the logged-in Cookie and fill in publisher identity details."
+    title="① Apply for admission"
+    href="/docs/apply"
+    description="Email support@anibt.net with identity info, reviewed manually."
   />
   <Card
-    title="Mikan Sync"
-    href="/en/docs/site-sync/mikan"
-    description="Fill in the API Token and query group IDs."
+    title="② Site sync"
+    href="/docs/site-sync"
+    description="Mirror releases out to nyaa, Bangumi, ACG.rip, Mikan, and others."
   />
   <Card
-    title="ACGNX Sync"
-    href="/en/docs/site-sync/acgnx"
-    description="Copy the UID and API Token from account API settings."
+    title="③ Tracker URL"
+    href="/docs/tracker"
+    description="Add https://tracker.anibt.net/announce to torrents you create."
   />
   <Card
-    title="ACG.rip Sync"
-    href="/en/docs/site-sync/acgrip"
-    description="Copy the API Token from the dashboard without the prefix."
-  />
-  <Card
-    title="Nyaa Sync"
-    href="/en/docs/site-sync/nyaa"
-    description="Copy the session value from DevTools and add the session= prefix."
+    title="④ Release API"
+    href="/docs/open-api/releases-publish"
+    description="POST /api/releases/publish — publish releases programmatically."
   />
 </Cards>
+
+## I just want to follow shows / pull data
+
+No account needed. RSS plugs into BT clients; JSON / search fits scripts.
+
+<Cards>
+  <Card
+    title="Per-show RSS"
+    href="/docs/open-api/rss-anime"
+    description="GET /rss/anime.xml — standard RSS, filterable by show / group / tag."
+  />
+  <Card
+    title="Personal subscriptions (auth)"
+    href="/docs/open-api/rss-subscriptions"
+    description="GET /rss/subscriptions.xml — every selection from the My-subscriptions panel rolled into one private feed."
+  />
+  <Card
+    title="Group / sitewide / season"
+    href="/docs/open-api/other-endpoints"
+    description="Group short-link RSS, sitewide magnet RSS, season JSON, per-show group JSON."
+  />
+  <Card
+    title="Integration examples"
+    href="/docs/open-api/examples"
+    description="Wiring qBittorrent, Sonarr, and custom scripts."
+  />
+</Cards>
+
+## I'm building AI / Agent / RAG
+
+The Wiki ships LLM-friendly endpoints across the board:
+
+<Cards>
+  <Card
+    title="LLM integration"
+    href="/docs/llm"
+    description="/llms.txt, /llms-full.txt, per-page .md — for ChatGPT / Cursor / your own RAG."
+  />
+</Cards>
+
+## Adjacent projects
+
+Open-source tools in the AniBT orbit:
+
+<Cards>
+  <Card
+    title="Related projects"
+    href="/docs/projects"
+    description="FontInAss (subtitle font subsetting), AniBT-Speed (auto-seeder)."
+  />
+</Cards>
+
+---
+
+Can't find what you need? See [Contact](/docs/contact), or just write to [support@anibt.net](mailto:support@anibt.net).

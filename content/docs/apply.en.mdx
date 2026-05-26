@@ -1,0 +1,72 @@
+---
+title: Apply for admission
+description: Subtitle groups apply by email; identity is verified manually before publishing access is granted.
+---
+
+AniBT does not self-serve publishing accounts. **Subtitle groups** apply by email and are reviewed manually. Once admitted we open a publishing account on your existing AniBT user, hook up the group's identity, and from there you can publish via the [Release API](/docs/open-api/releases-publish) and [sync to other sites](/docs/site-sync).
+
+## What to send
+
+<Steps>
+  <Step>
+    ### Email from your registered address
+    Send the application from the email address you used to register on AniBT. We use it to confirm you are the account holder and not someone applying in your name.
+
+    Haven't registered yet? Sign up at [anibt.net](https://anibt.net) first, then write in from that same address.
+  </Step>
+  <Step>
+    ### Group basics
+    Include in the email body:
+
+    - **Group name**: full subtitle group name.
+    - **slug**: a short, stable English identifier used as the unique ID, e.g. `sakura-sub`. Pick something you won't want to change — it shows up in public URLs like [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints).
+    - **Short intro**: a paragraph or two about what you release, how long you've been active, and your current pace.
+    - **Contact channels**: Telegram, group website, Discord, mailing list — anything we can reach the group through.
+  </Step>
+  <Step>
+    ### Identity proof
+    Provide **one** of the following — you don't need all three:
+
+    - The publishing account / email your group already uses on nyaa, ACG.rip, Mikan, etc., so we can cross-check.
+    - Admin proof on the group's official site / Telegram channel / Twitter (e.g. a temporary pinned post acknowledging the application).
+    - Other evidence widely recognised among existing fansub members.
+
+    The point is to confirm you actually represent the group and aren't squatting someone else's slug.
+  </Step>
+</Steps>
+
+## Send to
+
+<Callout type="info">
+  Email **[support@anibt.net](mailto:support@anibt.net)**. A subject line like `Group application - <name>` helps it land in the right queue. Replies usually go out within a few working days.
+</Callout>
+
+If you don't hear anything within a week (check spam), feel free to ping us again or reach out via [other channels](/docs/contact).
+
+## After approval
+
+We reply by email confirming the account is set up. On your side:
+
+- Your group identity and slug are now bound to your account.
+- The [Release API](/docs/open-api/releases-publish) becomes available — you'll receive an API Key.
+- Your group becomes visible in the site listings and the [group RSS feeds](/docs/open-api/other-endpoints).
+
+Recommended reading next:
+
+<Cards>
+  <Card
+    title="Site sync setup"
+    href="/docs/site-sync"
+    description="Mirror AniBT releases out to nyaa / Bangumi / ACG.rip / Mikan."
+  />
+  <Card
+    title="Release API"
+    href="/docs/open-api/releases-publish"
+    description="POST /api/releases/publish — push releases programmatically."
+  />
+  <Card
+    title="Tracker URL"
+    href="/docs/tracker"
+    description="The announce URL to bake into your torrents."
+  />
+</Cards>

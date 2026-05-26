@@ -1,4 +1,16 @@
 {
   "title": "AniBT Wiki",
-  "pages": ["index", "site-sync", "open-api", "tracker", "projects", "llm"]
+  "pages": [
+    "index",
+    "---For subtitle groups---",
+    "apply",
+    "site-sync",
+    "tracker",
+    "---For users & developers---",
+    "open-api",
+    "llm",
+    "---Ecosystem---",
+    "projects",
+    "contact"
+  ]
 }

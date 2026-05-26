@@ -1,4 +1,16 @@
 {
   "title": "AniBT Wiki",
-  "pages": ["index", "site-sync", "open-api", "tracker", "projects", "llm"]
+  "pages": [
+    "index",
+    "---字幕組---",
+    "apply",
+    "site-sync",
+    "tracker",
+    "---使用者與開發者---",
+    "open-api",
+    "llm",
+    "---生態---",
+    "projects",
+    "contact"
+  ]
 }
