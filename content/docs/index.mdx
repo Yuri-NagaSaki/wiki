@@ -1,11 +1,54 @@
 ---
 title: 开始使用
-description: AniBT Wiki 的文档入口。
+description: AniBT 的定位与站点同步文档入口。
 ---
 
-AniBT Wiki 会集中整理 AniBT 的使用说明、站点同步配置和常见问题。
+<div className="anibt-start">
+  <section className="anibt-start-hero">
+    <p className="anibt-start-kicker">AniBT / Public Anime Tracker</p>
+    <h2>AniBT 是一个面向动漫的公共种子追踪器，专注于动漫和字幕组。</h2>
+    <p>
+      我们希望为字幕组成员提供一个与社区分享作品的平台，同时让用户更容易自动找到并下载他们想要的内容。
+    </p>
+  </section>
 
-## 当前内容
+  <section className="anibt-start-strip" aria-label="AniBT 的核心方向">
+    <div>
+      <strong>字幕组成员</strong>
+      <span>发布、同步并管理作品信息</span>
+    </div>
+    <div>
+      <strong>动漫用户</strong>
+      <span>更快找到想追的资源</span>
+    </div>
+    <div>
+      <strong>自动化流程</strong>
+      <span>用站点同步减少重复操作</span>
+    </div>
+  </section>
+</div>
 
-- [萌番组同步填写](/docs/site-sync/bangumi)
-- [Mikan（蜜柑计划）同步填写](/docs/site-sync/mikan)
+## 站点同步
+
+<div className="anibt-guide-grid">
+  <a className="anibt-guide-link" href="/docs/site-sync/bangumi">
+    <span>萌番组</span>
+    <small>复制登录后的 Cookie 并填写同步身份</small>
+  </a>
+  <a className="anibt-guide-link" href="/docs/site-sync/mikan">
+    <span>Mikan（蜜柑计划）</span>
+    <small>填写 API Token，并查询字幕组与发布组 ID</small>
+  </a>
+  <a className="anibt-guide-link" href="/docs/site-sync/acgnx">
+    <span>末日站</span>
+    <small>从账户 API 设置复制 UID 和 API Token</small>
+  </a>
+  <a className="anibt-guide-link" href="/docs/site-sync/acgrip">
+    <span>ACG.rip</span>
+    <small>从仪表盘复制 API Token 后半段</small>
+  </a>
+  <a className="anibt-guide-link" href="/docs/site-sync/nyaa">
+    <span>Nyaa</span>
+    <small>从 DevTools 复制 session，并加上 session= 前缀</small>
+  </a>
+</div>

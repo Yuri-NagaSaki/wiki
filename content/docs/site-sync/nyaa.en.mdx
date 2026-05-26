@@ -1,0 +1,28 @@
+---
+title: Nyaa Sync
+description: Fill in the session Cookie required by AniBT's Nyaa sync.
+---
+
+> **Note: Nyaa Cookies are valid for only one month and need to be updated regularly.**
+>
+> **Before saving the Cookie, manually add the `session=` prefix.**
+
+Press <kbd>F12</kbd> to open **DevTools**, then open **Application** from the top bar.
+
+In the sidebar, find **Storage**, expand **Cookie**, and click **https://nyaa.si**.
+
+Find **session** in the name list and click it. The **Cookie Value** will appear below. Copy that value.
+
+Example:
+
+```txt
+eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+```
+
+The final value saved in AniBT should be:
+
+```txt
+session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+```
+
+![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)

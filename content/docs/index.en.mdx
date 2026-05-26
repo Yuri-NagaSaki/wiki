@@ -1,11 +1,54 @@
 ---
 title: Getting Started
-description: The entry point for AniBT Wiki documentation.
+description: AniBT's positioning and site sync documentation entry point.
 ---
 
-AniBT Wiki collects usage guides, site sync configuration, and common troubleshooting notes.
+<div className="anibt-start">
+  <section className="anibt-start-hero">
+    <p className="anibt-start-kicker">AniBT / Public Anime Tracker</p>
+    <h2>AniBT is a public anime torrent tracker focused on anime and subtitle groups.</h2>
+    <p>
+      We want to give subtitle group members a platform for sharing their releases with the community, while helping users automatically find and download the content they want.
+    </p>
+  </section>
 
-## Current Guides
+  <section className="anibt-start-strip" aria-label="AniBT focus areas">
+    <div>
+      <strong>Subtitle Groups</strong>
+      <span>Publish, sync, and manage release information</span>
+    </div>
+    <div>
+      <strong>Anime Users</strong>
+      <span>Find the releases they care about faster</span>
+    </div>
+    <div>
+      <strong>Automation</strong>
+      <span>Reduce repeated work with site sync</span>
+    </div>
+  </section>
+</div>
 
-- [Bangumi Moe Sync](/en/docs/site-sync/bangumi)
-- [Mikan Sync](/en/docs/site-sync/mikan)
+## Site Sync
+
+<div className="anibt-guide-grid">
+  <a className="anibt-guide-link" href="/en/docs/site-sync/bangumi">
+    <span>Bangumi Moe</span>
+    <small>Copy the logged-in Cookie and fill in sync identity details</small>
+  </a>
+  <a className="anibt-guide-link" href="/en/docs/site-sync/mikan">
+    <span>Mikan</span>
+    <small>Fill in the API Token and query group IDs</small>
+  </a>
+  <a className="anibt-guide-link" href="/en/docs/site-sync/acgnx">
+    <span>ACGNX</span>
+    <small>Copy the UID and API Token from account API settings</small>
+  </a>
+  <a className="anibt-guide-link" href="/en/docs/site-sync/acgrip">
+    <span>ACG.rip</span>
+    <small>Copy only the token suffix from the dashboard</small>
+  </a>
+  <a className="anibt-guide-link" href="/en/docs/site-sync/nyaa">
+    <span>Nyaa</span>
+    <small>Copy the session value and add the session= prefix</small>
+  </a>
+</div>

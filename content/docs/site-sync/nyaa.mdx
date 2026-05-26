@@ -1,0 +1,28 @@
+---
+title: Nyaa 同步填写
+description: 在 AniBT 中填写 Nyaa 同步所需 session Cookie。
+---
+
+> **注意：Nyaa Cookie 的有效期只有一个月，需要定期更新。**
+>
+> **在填写 Cookie 之前，需要手动填入前缀 `session=`。**
+
+按 <kbd>F12</kbd> 打开你的 **DevTools**，找到顶栏的 **Application（应用）**。
+
+在侧边栏 **Storage（存储）** 中找到 **Cookie**，展开后点击 **https://nyaa.si**。
+
+从列表的名称中找到 **session** 并点击，下方会显示 **Cookie Value**。复制这一串内容。
+
+示例：
+
+```txt
+eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+```
+
+最后填入 AniBT 的内容为：
+
+```txt
+session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+```
+
+![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
