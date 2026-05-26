@@ -3,8 +3,12 @@ import { ArrowRight, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 const copy = {
-  zh: {
+  'zh-CN': {
     enter: '进入 Wiki',
+    site: '回到 AniBT',
+  },
+  'zh-Hant': {
+    enter: '進入 Wiki',
     site: '回到 AniBT',
   },
   en: {
@@ -19,7 +23,7 @@ export default async function HomePage({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  const t = copy[lang === 'zh-CN' ? 'zh' : 'en'];
+  const t = copy[lang as keyof typeof copy] ?? copy['zh-CN'];
 
   return (
     <main className="anibt-home">

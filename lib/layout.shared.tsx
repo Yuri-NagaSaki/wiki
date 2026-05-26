@@ -54,10 +54,56 @@ export const translations = i18n
     en: {
       displayName: 'English',
     },
+    'zh-Hant': {
+      displayName: '繁體中文',
+      search: '搜尋文件',
+      searchNoResult: '沒有找到結果',
+      searchOpen: '開啟搜尋',
+      searchClose: '關閉搜尋',
+      toc: '本頁目錄',
+      tocNoHeadings: '沒有標題',
+      tocInline: '目錄',
+      lastUpdate: '最後更新於',
+      chooseLanguage: '選擇語言',
+      nextPage: '下一頁',
+      previousPage: '上一頁',
+      chooseTheme: '主題',
+      editOnGithub: '在 GitHub 編輯',
+      themeToggle: '切換主題',
+      themeLight: '淺色',
+      themeDark: '深色',
+      themeSystem: '跟隨系統',
+      codeBlockCopy: '複製文字',
+      codeBlockCopied: '已複製',
+      accordionCopyAnchor: '複製連結',
+      headingCopyAnchor: '複製標題連結',
+      bannerClose: '關閉提示',
+      menuToggle: '開啟選單',
+      pageActionsCopyMarkdown: '複製 Markdown',
+      pageActionsOpen: '開啟',
+      pageActionsOpenGitHub: '在 GitHub 開啟',
+      pageActionsViewMarkdown: '檢視 Markdown',
+      pageActionsOpenScira: '在 Scira AI 開啟',
+      pageActionsOpenChatGPT: '在 ChatGPT 開啟',
+      pageActionsOpenClaude: '在 Claude 開啟',
+      pageActionsOpenCursor: '在 Cursor 開啟',
+      pageActionsOpenInLLMPrompt: '閱讀 {url}，我想基於它提問。',
+      sidebarOpen: '開啟側邊欄',
+      sidebarCollapse: '摺疊側邊欄',
+      typeTableProp: '屬性',
+      typeTableType: '型別',
+      typeTableDefault: '預設值',
+      typeTableParameters: '參數',
+      typeTableReturns: '回傳值',
+      notFoundTitle: '頁面不存在',
+      notFoundDescription: '你訪問的頁面可能已被移動、重新命名或暫時無法使用。',
+      notFoundLink: '返回首頁',
+    },
   });
 
 export function baseOptions(locale: string): BaseLayoutProps {
-  const isChinese = locale === i18n.defaultLanguage;
+  const docsLabel =
+    locale === 'zh-CN' ? '文档' : locale === 'zh-Hant' ? '文件' : 'Docs';
 
   return {
     i18n: true,
@@ -79,7 +125,7 @@ export function baseOptions(locale: string): BaseLayoutProps {
     },
     links: [
       {
-        text: isChinese ? '文档' : 'Docs',
+        text: docsLabel,
         url: localizedPath(locale, '/docs'),
         active: 'nested-url',
       },
