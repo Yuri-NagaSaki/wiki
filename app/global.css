@@ -123,14 +123,6 @@ body {
   max-width: 36rem;
 }
 
-.anibt-home-tick {
-  width: 2.25rem;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--anibt-accent-primary), var(--anibt-accent-secondary));
-  margin-bottom: 1.75rem;
-}
-
 .anibt-home-title {
   display: inline-flex;
   align-items: baseline;
@@ -158,13 +150,6 @@ body {
   border-radius: 9999px;
   background: var(--anibt-accent-primary);
   transform: translateY(-0.1rem);
-}
-
-.anibt-home-tagline {
-  margin-top: 1.1rem;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--anibt-text-secondary);
 }
 
 .anibt-home-actions {

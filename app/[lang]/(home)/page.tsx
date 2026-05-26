@@ -4,13 +4,11 @@ import Link from 'next/link';
 
 const copy = {
   zh: {
-    tagline: '给字幕组与追番人的小册子',
-    enter: '翻开手册',
+    enter: '进入 Wiki',
     site: '回到 AniBT',
   },
   en: {
-    tagline: 'A field notebook for fansubbers and trackers',
-    enter: 'Open the handbook',
+    enter: 'Enter Wiki',
     site: 'Back to AniBT',
   },
 } as const;
@@ -33,16 +31,12 @@ export default async function HomePage({
       </div>
 
       <div className="anibt-home-stage">
-        <span className="anibt-home-tick" aria-hidden="true" />
-
         <h1 className="anibt-home-title">
           <span>Ani</span>
           <em>BT</em>
           <span>Wiki</span>
           <i className="anibt-home-title-dot" aria-hidden="true" />
         </h1>
-
-        <p className="anibt-home-tagline">{t.tagline}</p>
 
         <div className="anibt-home-actions">
           <Link
