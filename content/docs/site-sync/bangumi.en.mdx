@@ -3,41 +3,90 @@ title: Bangumi Moe Sync
 description: Fill in the Cookie, publisher identity, and Team ID required by AniBT's Bangumi Moe sync.
 ---
 
-## Step One
+Bangumi Moe authenticates by login cookie. Capture it from DevTools while logging in.
 
-Open [https://bangumi.moe](https://bangumi.moe), log out first, and refresh the page.
+<Callout type="warn">
+  You **must log out and clear Network first**, then log in again — otherwise the captured request won't carry a complete cookie.
+</Callout>
 
-Press <kbd>F12</kbd> to open DevTools, then switch to **Network**. Make sure network recording is enabled.
+## Step One: Start Network Recording
 
-When the recording button is **red**, recording is enabled.
+<Steps>
+  <Step>
+    ### Log out and refresh
 
-![DevTools Network recording](/images/site-sync/bangumi-network-recording.webp)
+    Visit [https://bangumi.moe](https://bangumi.moe), **log out**, and **refresh** the page.
+  </Step>
 
-Enter your account and password, then log in.
+  <Step>
+    ### Enable network recording
 
-## Step Two
+    Press <kbd>F12</kbd> to open DevTools and switch to **Network**. Confirm the recording button is **red** (recording is on).
 
-In the **Network** panel, find and click the request named **`disqus`**.
+    ![DevTools Network recording](/images/site-sync/bangumi-network-recording.webp)
+  </Step>
 
-![The disqus request in Network](/images/site-sync/bangumi-disqus-request.webp)
+  <Step>
+    ### Log in again
 
-In the right panel, open **Headers** and scroll down to **Request Headers**. Copy the entire **Cookie** value.
+    Enter your account and password, then sign in.
+  </Step>
+</Steps>
 
-**Do not include the `priority` value below it, such as `u=1, i`.**
+## Step Two: Copy the Cookie
 
-![Copy the Cookie request header](/images/site-sync/bangumi-cookie-header.webp)
+<Steps>
+  <Step>
+    ### Locate the disqus request
 
-Return to AniBT, paste the Cookie, and save it.
+    In the **Network** panel, find and click the request named **`disqus`**.
 
-![Paste the Cookie in AniBT](/images/site-sync/bangumi-anibt-cookie-save.webp)
+    ![The disqus request in Network](/images/site-sync/bangumi-disqus-request.webp)
+  </Step>
 
-For **Publisher Identity Name** and **Team ID**:
+  <Step>
+    ### Copy the Cookie request header
 
-- **Publisher Identity Name**: enter your Bangumi Moe team name if you have one.
-- **Team ID**: optional. Sync still works without it.
+    On the right, switch to **Headers** and scroll down to **Request Headers** → **Cookie**. Select the entire long value.
 
-Save the form and test the connection.
+    <Callout type="warn">
+      Do **not** include the `priority` line below it (e.g. `u=1, i`).
+    </Callout>
 
-If it shows **connection successful**, the setup is complete. If it fails, check whether the Cookie was copied completely and whether login succeeded.
+    ![Copy the Cookie request header](/images/site-sync/bangumi-cookie-header.webp)
+  </Step>
+
+  <Step>
+    ### Paste in AniBT and save
+
+    Return to AniBT, paste the Cookie, and save.
+
+    ![Paste the Cookie in AniBT](/images/site-sync/bangumi-anibt-cookie-save.webp)
+  </Step>
+</Steps>
+
+## Publisher Identity & Team ID
+
+<TypeTable
+  type={{
+    'Publisher Identity Name': {
+      description: 'Your team name on Bangumi Moe. Leave blank if you have no registered team.',
+      type: 'string',
+      default: 'optional',
+    },
+    'Team ID': {
+      description: 'Optional. Sync still works when left blank.',
+      type: 'string',
+      default: 'optional',
+    },
+  }}
+/>
+
+## Test the Connection
+
+After saving, click **Test Connection**:
+
+- **Success** — setup is complete.
+- **Failure** — re-check whether the Cookie was copied completely and that login succeeded.
 
 ![Successful connection test](/images/site-sync/bangumi-connection-success.webp)

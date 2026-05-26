@@ -3,26 +3,46 @@ title: Nyaa Sync
 description: Fill in the session Cookie required by AniBT's Nyaa sync.
 ---
 
-> **Note: Nyaa Cookies are valid for only one month and need to be updated regularly.**
->
-> **Before saving the Cookie, manually add the `session=` prefix.**
+Nyaa authenticates by browser cookie. Copy the `session` value from DevTools.
 
-Press <kbd>F12</kbd> to open **DevTools**, then open **Application** from the top bar.
+<Callout type="warn">
+  Nyaa cookies expire after **one month** and must be refreshed periodically. Manually prepend `session=` before saving.
+</Callout>
 
-In the sidebar, find **Storage**, expand **Cookie**, and click **https://nyaa.si**.
+## Steps
 
-Find **session** in the name list and click it. The **Cookie Value** will appear below. Copy that value.
+<Steps>
+  <Step>
+    ### Open DevTools
 
-Example:
+    Logged in to Nyaa, press <kbd>F12</kbd> to open **DevTools**, then switch to the **Application** tab.
+  </Step>
 
-```txt
-eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-```
+  <Step>
+    ### Locate the session cookie
 
-The final value saved in AniBT should be:
+    In the sidebar, expand **Storage** → **Cookie** → `https://nyaa.si`. Click **session** in the name list — its value appears below.
+  </Step>
 
-```txt
-session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-```
+  <Step>
+    ### Copy the cookie value
 
-![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+    Copy the long value:
+
+    ```txt title="Value copied from DevTools"
+    eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+    ```
+
+    ![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+  </Step>
+
+  <Step>
+    ### Add the `session=` prefix and save
+
+    When pasting into AniBT, **manually prepend** `session=`:
+
+    ```txt title="Final value saved in AniBT"
+    session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+    ```
+  </Step>
+</Steps>

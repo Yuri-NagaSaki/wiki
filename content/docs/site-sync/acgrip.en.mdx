@@ -3,10 +3,38 @@ title: ACG.rip Sync
 description: Fill in the API Token required by AniBT's ACG.rip sync.
 ---
 
-Open [https://acg.rip](https://acg.rip), click the blue avatar icon in the top-right navigation bar, then click **Dashboard**.
+ACG.rip needs only one value: an **API Token** copied from the dashboard.
 
-Find **Personal Settings** on the right. The second item below it is **API Token**.
+<Callout type="warn">
+  Do **not** include the `tpx://acg.rip/` prefix when copying the token — only the part after it.
+</Callout>
 
-When copying the API Token, do not include the `tpx://acg.rip/` prefix. Only copy the token after it, for example `7723-pxxxxxxxxxxxxxxp`.
+## Steps
 
-![ACG.rip API Token](/images/site-sync/acgrip-api-token.webp)
+<Steps>
+  <Step>
+    ### Open the Dashboard
+
+    Visit [https://acg.rip](https://acg.rip), click the blue **avatar** icon at the top-right of the navigation bar, and choose **Dashboard**.
+  </Step>
+
+  <Step>
+    ### Find the API Token
+
+    In the **Personal Settings** section on the right, the second item is **API Token**.
+
+    ![ACG.rip API Token](/images/site-sync/acgrip-api-token.webp)
+  </Step>
+
+  <Step>
+    ### Paste it into AniBT
+
+    The token looks like:
+
+    ```txt title="API Token format"
+    7723-pxxxxxxxxxxxxxxp
+    ```
+
+    Paste it into AniBT's ACG.rip sync settings and save.
+  </Step>
+</Steps>

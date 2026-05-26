@@ -3,26 +3,46 @@ title: Nyaa 同步填写
 description: 在 AniBT 中填写 Nyaa 同步所需 session Cookie。
 ---
 
-> **注意：Nyaa Cookie 的有效期只有一个月，需要定期更新。**
->
-> **在填写 Cookie 之前，需要手动填入前缀 `session=`。**
+Nyaa 通过浏览器 Cookie 鉴权，从 DevTools 中复制 `session` 字段即可。
 
-按 <kbd>F12</kbd> 打开你的 **DevTools**，找到顶栏的 **Application（应用）**。
+<Callout type="warn">
+  Nyaa Cookie 有效期**仅一个月**，需要定期更新。粘贴前请手动加上前缀 `session=`。
+</Callout>
 
-在侧边栏 **Storage（存储）** 中找到 **Cookie**，展开后点击 **https://nyaa.si**。
+## 操作步骤
 
-从列表的名称中找到 **session** 并点击，下方会显示 **Cookie Value**。复制这一串内容。
+<Steps>
+  <Step>
+    ### 打开 DevTools
 
-示例：
+    在 Nyaa 已登录状态下按 <kbd>F12</kbd> 打开 **DevTools**，切换到顶栏的 **Application（应用）**。
+  </Step>
 
-```txt
-eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-```
+  <Step>
+    ### 定位 session Cookie
 
-最后填入 AniBT 的内容为：
+    在侧栏 **Storage（存储）** → **Cookie** 下展开 `https://nyaa.si`，从名称列中点击 **session**，下方会显示 Cookie Value。
+  </Step>
 
-```txt
-session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-```
+  <Step>
+    ### 复制 Cookie 值
 
-![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+    复制 Cookie Value 这一长串内容：
+
+    ```txt title="DevTools 中复制到的内容"
+    eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+    ```
+
+    ![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+  </Step>
+
+  <Step>
+    ### 加上 `session=` 前缀后填入
+
+    在 AniBT 中粘贴时**手动补上前缀**：
+
+    ```txt title="最终填入 AniBT 的内容"
+    session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
+    ```
+  </Step>
+</Steps>
