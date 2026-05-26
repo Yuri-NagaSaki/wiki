@@ -1,0 +1,13 @@
+{
+  "title": "公開 API",
+  "pages": [
+    "index",
+    "subtitle-groups",
+    "rss-anime",
+    "examples",
+    "other-endpoints",
+    "caching",
+    "limits",
+    "troubleshooting"
+  ]
+}

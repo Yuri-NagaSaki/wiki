@@ -1,0 +1,121 @@
+---
+title: Subtitle group catalogue
+description: GET /api/subtitle-groups — public list of release groups; clients should call this once at startup to build a name → slug map before pulling RSS.
+---
+
+`/api/subtitle-groups` returns the **slug, display name, total releases, and total animes** for every visible release group on the site. Third-party applications should call it once at startup, cache the response locally, and then move on to RSS.
+
+<Callout type="info">
+  The data changes very slowly, so almost every poll returns 304. With `If-None-Match`, the bandwidth cost is essentially zero.
+</Callout>
+
+## Request
+
+```http title="HTTP"
+GET https://site.anibt.net/api/subtitle-groups
+Accept: application/json
+```
+
+## Response (excerpt)
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "data": [
+    {
+      "slug": "kirara-fantasia",
+      "name": "Kirara Fantasia",
+      "organizationId": "org_HCFDS3FmwXnP",
+      "status": "ACTIVE",
+      "totalReleases": 469,
+      "totalAnimes": 84,
+      "createdAt": 1775269444251
+    },
+    {
+      "slug": "pre-s",
+      "name": "Prejudice-Studio",
+      "organizationId": "org_OcyZBPpv1lTk",
+      "status": "ACTIVE",
+      "totalReleases": 47,
+      "totalAnimes": 12,
+      "createdAt": 1772900000000
+    }
+  ]
+}
+```
+
+## Field reference
+
+<TypeTable
+  type={{
+    'slug': {
+      description: 'URL-safe stable identifier. Use this for the groupSlug parameter on every RSS endpoint.',
+      type: 'string',
+    },
+    'name': {
+      description: 'Display name (any language; may be adjusted by operators).',
+      type: 'string',
+    },
+    'organizationId': {
+      description: 'Internal id; third parties usually do not need it.',
+      type: 'string',
+    },
+    'status': {
+      description: 'ACTIVE / HIDDEN / etc. This endpoint only returns visible groups.',
+      type: 'enum',
+    },
+    'totalReleases': {
+      description: 'Total number of releases by the group (aggregated, fresh to the second).',
+      type: 'number',
+    },
+    'totalAnimes': {
+      description: 'Number of distinct shows the group has covered.',
+      type: 'number',
+    },
+    'website': {
+      description: 'Optional external homepage of the group.',
+      type: 'string?',
+    },
+    'createdAt': {
+      description: 'Time the group was first ingested (ms).',
+      type: 'number',
+    },
+  }}
+/>
+
+## 304 support
+
+The ETag has the form `W/"sg{count}-{maxCreatedAt}-{releaseSum}-{urlHash}"`. Reissue the request with `If-None-Match` to receive 304.
+
+```bash title="Verify 304"
+H=$(curl -sI "https://site.anibt.net/api/subtitle-groups")
+ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+curl -sI -H "If-None-Match: $ETAG" "https://site.anibt.net/api/subtitle-groups" | head -1
+# → HTTP/2 304
+```
+
+## Practical: filter target groups with jq
+
+```bash title="Pick four groups"
+curl -s https://site.anibt.net/api/subtitle-groups \
+  | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
+```
+
+Output:
+
+```json title="Result"
+{"name":"Kirara Fantasia","slug":"kirara-fantasia"}
+{"name":"Prejudice-Studio","slug":"pre-s"}
+{"name":"北宇治字幕组","slug":"kitauji-sub"}
+{"name":"拨雪寻春","slug":"haruhana"}
+```
+
+## Caching & rate limiting
+
+| Item              | Value                                                                |
+| ----------------- | -------------------------------------------------------------------- |
+| `Cache-Control`   | `public, max-age=300, s-maxage=300, stale-while-revalidate=86400`    |
+| Rate limit        | Shares the 60-second window with RSS endpoints — see [Rate limits](/docs/open-api/limits) |
+| Conditional req.  | `If-None-Match`, `If-Modified-Since`                                 |
+
+Next: with the slug in hand, head to the [RSS main entry](/docs/open-api/rss-anime) to build subscription URLs.

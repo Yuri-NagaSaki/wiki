@@ -1,0 +1,96 @@
+---
+title: Examples
+description: Eight typical query combinations using bgmId=543360 ("Kamiina Botan") across four release groups.
+---
+
+The examples below all target `bgmId=543360` (*Kamiina Botan, Yoeru Sugata wa Yuri no Hana*). The four group slugs were validated against [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
+
+```txt title="Target groups"
+kirara-fantasia   Kirara Fantasia
+pre-s             Prejudice-Studio
+kitauji-sub       北宇治字幕组
+haruhana          拨雪寻春
+```
+
+## 1. One group + one show (most common)
+
+```txt title="One feed = one group × one show"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=pre-s
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
+```
+
+## 2. Filter by resolution
+
+<Tabs items={['1080p only', '1080p or 4K']}>
+  <Tab value="1080p only">
+    ```txt
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p
+    ```
+  </Tab>
+  <Tab value="1080p or 4K">
+    ```txt
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
+    ```
+    Repeated values mean OR.
+  </Tab>
+</Tabs>
+
+## 3. Language + subtitle method
+
+**Kitauji-sub**, simplified Chinese, external or internal subtitles:
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
+```
+
+## 4. Stacked filters
+
+**Haruhana**, 1080p, MKV, simplified Chinese external subs, episode 5:
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
+```
+
+## 5. Aggregate one show across all groups
+
+All groups for 543360, 1080p simplified Chinese:
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+```
+
+## 6. All releases from one group (any show)
+
+Latest 50 from `Kirara Fantasia`. Two equivalent forms:
+
+<Tabs items={['Main entry', 'Short link']}>
+  <Tab value="Main entry">
+    ```txt
+    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=50
+    ```
+  </Tab>
+  <Tab value="Short link">
+    ```txt
+    https://anibt.net/rss/group/kirara-fantasia.xml
+    ```
+    Shorter URL, easier to paste in READMEs and forums. See [Other endpoints](/docs/open-api/other-endpoints).
+  </Tab>
+</Tabs>
+
+## 7. Batches / specials
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
+```
+
+## 8. High throughput (max out a single request)
+
+```txt
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=1000
+```
+
+<Callout type="info">
+  `/rss/anime.xml` allows `limit` up to **1000**; `/rss/group/<slug>.xml` and `/rss/magnets.xml` cap at **200**. Excess values are silently truncated. See [Rate limits & caps](/docs/open-api/limits).
+</Callout>

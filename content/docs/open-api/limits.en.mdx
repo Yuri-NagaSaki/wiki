@@ -1,0 +1,198 @@
+---
+title: Rate limits & caps
+description: Per-endpoint limits, scan caps, rate limiting, RSS-client compatibility matrix, and end-to-end latency breakdown.
+---
+
+## Caps per endpoint
+
+| Endpoint                  | `limit` default | `limit` cap | Scan cap          | Rate limit (default)  |
+| ------------------------- | --------------- | ----------- | ----------------- | --------------------- |
+| `/rss/anime.xml`          | **100**         | **1000**    | **4000** rows     | 120 req / 60 s / IP   |
+| `/rss/group/<slug>.xml`   | 100             | **200**     | —                 | 120 req / 60 s / IP   |
+| `/rss/magnets.xml`        | 100             | **200**     | —                 | 120 req / 60 s / IP   |
+| `/api/subtitle-groups`    | —               | full list   | —                 | shared 60 s window    |
+| `/api/seasons/anime`      | —               | —           | —                 | 30 req / 60 s / IP    |
+| `/api/anime/groups`       | —               | —           | —                 | 30 req / 60 s / IP    |
+
+<Callout type="info">
+  **Out-of-range `limit`**: silently truncated to the cap. `?limit=5000` to `/rss/anime.xml` returns 1000 items, not an error.
+</Callout>
+
+### `MAX_OVERSCAN` (only for `/rss/anime.xml`)
+
+When you stack tag filters (resolution / language / subtitle / format / episode / episodeKey) the backend first pulls candidates via index, then filters them in memory. The candidate pool caps at **4000 rows** to keep a single request from running away.
+
+For most show + group combinations the real data sits well below this; with extremely strict filters (e.g. only 3 episodes of 1080p simplified-Chinese external subs from one group) the backend may still pull 4000 rows, then run the tag filter, then return up to `limit` items. **In practice**: very rare combinations may "look thin" — that is the safety valve at work.
+
+## Lifting the caps
+
+<Tabs items={['Client-side', 'Server-side (self-hosted)', 'Hitting 429']}>
+  <Tab value="Client-side">
+    1. **Max out `limit`**: set `?limit=` to the endpoint cap (1000 / 200). Trades N polls for one larger request.
+    2. **Use 304 instead of polling harder**: include `If-None-Match` on every request. The server returns 304 with empty body when nothing changed — most clients do not count it as bandwidth, but it still costs one rate-limit slot.
+    3. **Increase the interval**: ≥ 5 minutes is the right default. Anime ships per episode; per-minute polling has zero upside.
+    4. **Don't fan out concurrently**: parallel requests against the same URL just get the same cached response and burn rate-limit budget.
+  </Tab>
+  <Tab value="Server-side (self-hosted)">
+    Adjust via Convex / platform **environment variables** (effective after restart):
+
+    ```bash title="env"
+    # raise from 120 / 60 s / IP to 600 / 60 s / IP
+    RSS_ANIME_RATE_LIMIT_MAX=600
+    RSS_GROUP_RATE_LIMIT_MAX=600
+    RSS_MAGNETS_RATE_LIMIT_MAX=600
+
+    # or change the window to 10 s (becomes 120 / 10 s)
+    RSS_RATE_LIMIT_WINDOW_MS=10000
+
+    # disable the CDN edge cache (NOT recommended — testing only)
+    RSS_CACHE_TTL_SECONDS=0
+    ```
+
+    <Callout type="warn">
+      `MAX_LIMIT=1000` and `MAX_OVERSCAN=4000` for `/rss/anime.xml` are source-code constants in `convex/rssFeed.ts`, **not** environment-controlled. Private deployments needing higher caps must edit the source and run `npx convex deploy`.
+    </Callout>
+
+    After raising, watch for:
+
+    - **Response size**: 1000 items ≈ 0.8–2 MB of XML — mind the bandwidth.
+    - **Convex query duration**: 4000 candidates + in-memory tag filter is usually < 200 ms; pushing `MAX_OVERSCAN` toward the 1 s function ceiling risks failures.
+    - **Client-side parsing**: many RSS readers cap retained items at N — adjust accordingly.
+  </Tab>
+  <Tab value="Hitting 429">
+    - Responses include `Retry-After: <seconds>` — back off accordingly. **Do not retry immediately.**
+    - Short-burst 429s usually mean misconfiguration (too-fast polling, multiple readers sharing a URL). Bumping to 5-minute intervals + ETag basically eliminates them.
+  </Tab>
+</Tabs>
+
+## Real load at 1000 users
+
+> **Bottom line**: origin's true backfill rate is essentially independent of concurrent users — it scales with `s-maxage` and query-shape diversity.
+
+Request flow:
+
+```txt
+User ──► Browser / RSS-client cache (max-age)
+        ──► Cloudflare CDN (s-maxage + SWR)
+            ──► origin (Convex / TanStack SSR) ──► database
+```
+
+- Inside CDN fresh window → **0 origin hits**
+- CDN expired but inside SWR → user gets stale (zero latency), origin sees **1** async refresh
+- Fully expired → origin sees one synchronous backfill (~50–200 ms)
+- Client sends `If-None-Match` → origin returns 304 (no body, near-zero cost) on hit
+
+Estimates assuming **1000 users polling every 15 minutes by default**:
+
+| Endpoint                                | Client req / day  | Origin backfill / hour       | Notes                                       |
+| --------------------------------------- | ----------------- | ---------------------------- | ------------------------------------------- |
+| `/rss/anime.xml` (whole site)           | ~96k              | **~12**                      | 5 min CDN window, all users share one cache |
+| `/rss/group/<slug>.xml`                 | depends on slugs  | **~12 × slug count**         | 50 slugs ≈ 600 / hour                       |
+| `/rss/magnets.xml` (simple)             | —                 | **~30**                      | when all users share one filter             |
+| `/rss/magnets.xml` (complex, query-keyed)| —                 | **≈ 1 × unique queries / 60s** | ~0% CDN hit when each user differs; SWR softens latency |
+| `/api/subtitle-groups`                  | ~96k              | **~12**                      | data rarely changes; mostly 304             |
+| `/api/seasons/anime`                    | ~48k              | **~6**                       | season data is weekly + long cache          |
+| `/api/anime/groups` (per bgmId)         | —                 | **~12 × hot shows**          | cold shows take more first-time backfill    |
+
+**Overall**: 1000 users with full subscriptions + frontend usage produce **< 1000 requests / hour** at origin, of which 90%+ are 304s. SWR fully decouples user-perceived latency from origin backfill pressure.
+
+## Recommended polling intervals
+
+<TypeTable
+  type={{
+    'General anime tracker': {
+      description: '15–30 minutes. Anime ships per episode — anything shorter is wasted work.',
+      type: 'interval',
+    },
+    'Site-wide monitoring': {
+      description: '5–10 minutes. With ETag/304 the cost is negligible.',
+      type: 'interval',
+    },
+    'Complex search (magnets.xml?q=…)': {
+      description: '10+ minutes. Cache window is short; frequent polling reaches origin.',
+      type: 'interval',
+    },
+    'Group catalogue / seasonal list': {
+      description: 'Once at startup + cache locally. The data barely changes.',
+      type: 'interval',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  **Do not**:
+  - Fan out concurrent requests against the same URL (CDN gives identical responses; you only burn rate budget)
+  - Disable ETag / `If-None-Match` (each poll downloads the full body — wasted bandwidth)
+  - Poll faster than once a minute (will trigger 429, with no upside)
+</Callout>
+
+## Mainstream RSS clients in practice
+
+Polling cadence and ETag/304 support vary widely. **The good news**: AniBT emits correct `ETag` + `Last-Modified` + `Cache-Control` for every request; standards-compliant clients pick this up automatically — **no configuration needed**.
+
+| Client                             | Default poll      | `If-None-Match` | Honours `max-age` | Notes                                            |
+| ---------------------------------- | ----------------- | --------------- | ----------------- | ------------------------------------------------ |
+| **NetNewsWire** (macOS/iOS)        | 1 hour            | ✅              | ✅                | Best behaved; almost always 304                   |
+| **Inoreader** (cloud)              | ~30 min           | ✅              | ✅                | Server-side aggregation; 1000 users → 1 upstream |
+| **Feedly** (cloud)                 | ~1 hour           | ✅              | ✅                | Same as above; very origin-friendly              |
+| **FreshRSS** (self-hosted)         | configurable (1h default) | ✅      | ✅                | Recommend ≥ 15 min                                |
+| **Tiny Tiny RSS** (self-hosted)    | configurable      | ✅              | ⚠ partial         | Recommend ≥ 15 min manually                       |
+| **Reeder** (macOS/iOS)             | follows Inoreader/Feedly | —        | —                 | Forwards via the cloud aggregator                 |
+| **qBittorrent RSS auto-download**  | **30 min default** | ❌            | ❌                | Worst for origin, but CDN smooths it out          |
+| **Transmission + Flexget**         | configurable      | ✅ (Flexget)    | ✅                | Recommended                                      |
+| **Custom Python `requests`**       | whatever you write | up to you      | up to you         | See the minimal client in [HTTP caching](/docs/open-api/caching) |
+
+**Per-scenario expectations**:
+
+- **Personal subs to 1–2 shows (NetNewsWire / Inoreader)**: 1 request / hour, all 304 — origin barely notices.
+- **qBittorrent auto-download**: pulls the full XML every 30 minutes (~50–200 KB). With CDN hits, origin sees one request every 5 min at most.
+- **Public aggregator (Inoreader / Feedly)**: 1000 readers behind one shared upstream — origin sees one user.
+
+**Tuning tips**:
+
+- Prefer Inoreader / Feedly / NetNewsWire iCloud sync — you share cache with other users.
+- For direct qBittorrent / Transmission pulls, set the rule interval to ≥ 15 min (the 30 min default is also fine).
+- Custom scripts must implement `If-None-Match` reuse, otherwise it's wasted bandwidth.
+
+## End-to-end latency breakdown
+
+From "a group publishes a new release" to "the subscriber's RSS client surfaces it":
+
+```txt
+T=0       Group submits release in the AniBT backend
+          (Convex mutation writes releases / animeReleases / files tables)
+T=0       Database is immediately readable (Convex strong consistency)
+          /rss/anime.xml at this instant returns the new data, but CDN still has the old version
+
+T≤300s    Inside CDN fresh window (s-maxage=300):
+          requests are intercepted by CDN; users still see the old version
+          → this is the dominant source of perceived delay
+
+T=300s    CDN enters SWR window:
+          next user request triggers async refresh
+          origin returns the new data → CDN cache updates
+
+T=300~600s Next client poll cycle (depends on the client):
+          - 5 min interval → next poll picks up the new version
+          - 15 min interval → on average wait another 7.5 min
+          - 1 h interval → on average another 30 min
+```
+
+**Median end-to-end latency by client config**:
+
+| Client config                             | Origin → user surface |
+| ----------------------------------------- | --------------------- |
+| Custom script, 5-min poll + ETag          | **3–5 minutes**       |
+| NetNewsWire default 1 h poll              | 30–35 min (client-bottlenecked) |
+| Inoreader cloud aggregation               | 15–30 min (Inoreader's own cadence is the bottleneck) |
+| qBittorrent default 30 min                | 15–30 min             |
+
+### Where to optimise
+
+1. **Shorten the client poll interval (highest impact)**: 1 h → 5 min cuts latency from 30 min to 5 min instantly.
+2. **Shorten `s-maxage` (lower impact)**: 300s → 60s costs 5× origin pressure for only ~4 min less latency.
+3. **Force origin to push (impossible)**: HTTP RSS is pull-only.
+
+<Callout type="info">
+  If you need **real-time** notifications (< 1 minute), RSS is the wrong tool — use webhooks / Telegram bot / push. RSS is designed for "**eventually consistent + dirt cheap**", and 5–30 min latency is the feature, not the bug.
+</Callout>

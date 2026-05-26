@@ -1,0 +1,205 @@
+---
+title: HTTP 快取與 304
+description: 所有公開端點的 ETag、Cache-Control、stale-while-revalidate 行為詳解，配 Python 客戶端最小實現。
+---
+
+AniBT 所有公開端點（RSS + `/api/*`）都返回三層快取指令，並支援 `If-None-Match` / `If-Modified-Since` 條件請求。**配合標準 HTTP 客戶端無需任何配置即可生效。**
+
+<Callout type="info">
+  按 RFC 7232，`If-None-Match`（ETag）優先於 `If-Modified-Since`。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
+</Callout>
+
+## 響應頭
+
+```txt title="所有端點統一返回"
+Cache-Control:    public, max-age=<N>, s-maxage=<N>, stale-while-revalidate=<M>
+CDN-Cache-Control: public, max-age=<N>, stale-while-revalidate=<M>
+ETag:             W/"..."
+Last-Modified:    <RFC 1123 date>
+Vary:             Accept-Encoding
+```
+
+<TypeTable
+  type={{
+    'max-age / s-maxage': {
+      description: '瀏覽器 / CDN 在該視窗內完全不回源，直接吐快取。',
+      type: 'directive',
+    },
+    'stale-while-revalidate=M': {
+      description: '從 max-age 過期到 max-age + M 之間，CDN 仍立即給使用者舊版本，非同步單執行緒回源重新整理。使用者感知延遲為 0，origin 只多 1 個後臺請求。',
+      type: 'directive',
+    },
+    'Vary: Accept-Encoding': {
+      description: '快取鍵按壓縮協商分桶（gzip / br / identity 互不汙染），其他請求頭不影響響應體，因此不在 Vary 裡。',
+      type: 'directive',
+    },
+  }}
+/>
+
+## 各端點 TTL 一覽
+
+| 端點                            | `max-age` (瀏覽器) | `s-maxage` (CDN) | `stale-while-revalidate` |
+| ------------------------------- | ------------------ | ---------------- | ------------------------ |
+| `/rss/anime.xml`                | 300s               | 300s             | 86400s                   |
+| `/rss/group/<slug>.xml`         | 120s               | 300s             | 86400s                   |
+| `/rss/magnets.xml`（簡單）      | 120s               | 120s             | 600s                     |
+| `/rss/magnets.xml`（複雜查詢）  | 60s                | 60s              | 600s                     |
+| `/api/subtitle-groups`          | 300s               | 300s             | 86400s                   |
+| `/api/seasons/anime`            | 600s               | 600s             | 86400s                   |
+| `/api/anime/groups`             | 300s               | 300s             | 3600s                    |
+
+## ETag 計算公式
+
+| 端點                                              | 公式                                                              |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
+| `/rss/anime.xml` `/rss/group` `/rss/magnets.xml`  | `W/"r{itemCount}-{latestPublishedAtMs}-{canonicalUrlHash}"`       |
+| `/api/subtitle-groups`                            | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`       |
+| `/api/seasons/anime`                              | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`    |
+| `/api/anime/groups`                               | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                       |
+
+公式確定性：同一查詢在資料未變時 ETag 完全相同，多副本部署也能命中。
+
+## 驗證 304
+
+```bash title="curl 驗證"
+H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia")
+ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+
+curl -sI -H "If-None-Match: $ETAG" \
+  "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia" | head -1
+# → HTTP/2 304
+```
+
+## 時間軸：max-age + s-maxage + SWR + 304 怎麼互動
+
+很多人會問："`stale-while-revalidate=86400`（24 小時）是不是意味著我可能拿到 24 小時前的舊資料？"——**不會**。
+
+### 角色
+
+- **U**：你的 RSS 客戶端（NetNewsWire / Inoreader / 自建指令碼）
+- **CDN**：Cloudflare 邊緣節點
+- **O**：origin（AniBT 伺服器）
+
+### 端點示例：`/rss/anime.xml`（`max-age=300, s-maxage=300, swr=86400`）
+
+```txt title="時間軸"
+T=0s    U 第一次請求
+        CDN 沒快取 → 回源 O，O 拿到資料庫快照 → 返回 200 + ETag=A + body
+        CDN 把響應快取 300 秒（fresh 期），再延伸 86400 秒（stale 期）
+        U 拿到 200 + body + ETag=A
+        U 本地快取 300 秒
+
+T=60s   U 又來（輪詢太勤）
+        U 自己的瀏覽器 / 客戶端快取還在 max-age 內 → 根本不發請求
+        (origin 0 命中，CDN 0 命中)
+
+T=400s  U 來（第二次實際請求）
+        U 本地 max-age=300 已過期 → 帶上 If-None-Match: A 發請求
+        CDN s-maxage=300 也已過期，但還在 swr=86400 內
+        CDN 決策：立即把快取裡的舊版本（含 ETag=A）返回給 U；
+                 同時非同步發 1 個請求到 O 重新整理
+        U 收到響應：伺服器看 If-None-Match: A == 當前 ETag → 304 Not Modified
+        (使用者感知：0 延遲拿到 304，知道資料沒變 → 不用解析 XML)
+
+        與此同時 CDN 非同步回源：
+          - 資料真沒變 → O 直接返回 304 → CDN 把 fresh 期再續 300s
+          - 資料有更新 → O 返回 200 + ETag=B + 新 body → CDN 替換快取
+
+T=700s  U 來（第三次）
+        U 帶 If-None-Match: A
+        CDN 已有新快取（ETag=B 或仍是 A）
+        CDN 把 ETag=B 的 body 返回 → 但 U 的 If-None-Match 不匹配 → 200 + 新 body
+        U 拿到新資料
+```
+
+### `swr=86400` 的真正意義
+
+<Callout type="info">
+  **不是**"使用者會被強制忍受 24 小時舊資料"——而是"如果 origin 當前不可用 / 回源慢，CDN **最多** 用 24 小時內的舊版本兜底，避免給使用者報錯"。
+</Callout>
+
+只要 origin 健康，**你永遠拿到不超過 `s-maxage`（5 分鐘）舊的資料**：
+
+- T=400s：CDN 立即吐 5–10 分鐘前的版本（你大機率收到 304，無感）
+- T=400s 後幾百毫秒：CDN 已經非同步刷成最新版本
+- T=700s 你下一次來：直接拿最新
+
+## `cf-cache-status` 含義
+
+| 狀態      | 含義                                          | origin 是否被打 |
+| --------- | --------------------------------------------- | --------------- |
+| `HIT`     | CDN 記憶體命中，仍在 fresh 期                   | 否              |
+| `STALE`   | CDN 給舊版本（SWR 期內）+ 後臺非同步刷         | 非同步打 1 次     |
+| `MISS`    | CDN 沒快取，同步回源                         | 同步打 1 次     |
+| `EXPIRED` | 快取過期且**超過** SWR 視窗，必須同步回源      | 同步打 1 次     |
+| `BYPASS`  | 跳過快取（一般不會發生在公開端點）            | 同步打 1 次     |
+
+## 完整 curl 演示
+
+```bash title="一次完整驗證"
+# Step 1: 第一次請求，拿 ETag + 看快取頭
+curl -sSI 'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
+# HTTP/2 200
+# cache-control: public, max-age=300, s-maxage=300, stale-while-revalidate=86400
+# etag: W/"r12-1776624843260-9k2x4f"
+# cf-cache-status: MISS               ← 第一次穿透到 origin
+
+# Step 2: 立刻再來一次（仍在 max-age 內，但用 -H 強制觸發條件請求）
+ETAG='W/"r12-1776624843260-9k2x4f"'
+curl -sSI -H "If-None-Match: $ETAG" \
+  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|cf-cache-status)'
+# HTTP/2 304                          ← 資料沒變
+# cf-cache-status: HIT                ← CDN 記憶體裡直接命中
+
+# Step 3: 等 6 分鐘後再來（s-maxage 已過期，進入 SWR 期）
+sleep 360
+curl -sSI -H "If-None-Match: $ETAG" \
+  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|cf-cache-status|age)'
+# HTTP/2 304
+# cf-cache-status: STALE              ← CDN 給舊版本，後臺已非同步重新整理
+# age: 367                            ← 這份快取已存在 367 秒
+```
+
+## Python 客戶端最小實現
+
+```python title="poll.py"
+import requests, time
+
+URL = 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia,haruhana&language=CHS'
+state = {'etag': None, 'last_modified': None}
+
+def poll():
+    headers = {}
+    if state['etag']:          headers['If-None-Match']     = state['etag']
+    if state['last_modified']: headers['If-Modified-Since'] = state['last_modified']
+
+    r = requests.get(URL, headers=headers, timeout=10)
+    if r.status_code == 304:
+        print(f"[{time.strftime('%H:%M:%S')}] 304 not modified, body 0 bytes")
+        return None  # 資料沒變，不用解析
+    if r.status_code == 200:
+        state['etag']          = r.headers.get('ETag')
+        state['last_modified'] = r.headers.get('Last-Modified')
+        print(f"[{time.strftime('%H:%M:%S')}] 200 OK, body {len(r.content)} bytes, "
+              f"cf-cache-status={r.headers.get('cf-cache-status')}")
+        return r.content
+    if r.status_code == 429:
+        retry = int(r.headers.get('Retry-After', '60'))
+        print(f"rate-limited, sleeping {retry}s")
+        time.sleep(retry); return poll()
+    r.raise_for_status()
+
+# 每 15 分鐘輪詢一次
+while True:
+    poll()
+    time.sleep(15 * 60)
+```
+
+這套寫法滿足：
+
+- 第一次響應快取 ETag → 之後每次走 304，**頻寬幾乎為零**
+- CDN 給 `STALE` 時你也不知道（也不需要知道），使用者體驗完全相同
+- 觸發 429 自動按 `Retry-After` 退避

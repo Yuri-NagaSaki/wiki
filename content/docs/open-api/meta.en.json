@@ -1,0 +1,13 @@
+{
+  "title": "Open API",
+  "pages": [
+    "index",
+    "subtitle-groups",
+    "rss-anime",
+    "examples",
+    "other-endpoints",
+    "caching",
+    "limits",
+    "troubleshooting"
+  ]
+}

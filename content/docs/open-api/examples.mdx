@@ -1,0 +1,96 @@
+---
+title: 实战示例
+description: 基于 bgmId=543360（《上伊那牡丹》）+ 4 个字幕组的 8 种典型查询组合。
+---
+
+下列示例都基于 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》），4 个字幕组的 slug 已通过 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校验：
+
+```txt title="目标字幕组"
+kirara-fantasia   Kirara Fantasia
+pre-s             Prejudice-Studio
+kitauji-sub       北宇治字幕组
+haruhana          拨雪寻春
+```
+
+## 1. 单字幕组 + 番剧（最常用）
+
+```txt title="一个 RSS = 一个组 × 一个番剧"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=pre-s
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
+```
+
+## 2. 加分辨率
+
+<Tabs items={['只要 1080p', '1080p 或 4K']}>
+  <Tab value="只要 1080p">
+    ```txt
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p
+    ```
+  </Tab>
+  <Tab value="1080p 或 4K">
+    ```txt
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
+    ```
+    重复参数表示"或"。
+  </Tab>
+</Tabs>
+
+## 3. 字幕语言 + 字幕方式组合
+
+**北宇治字幕组**，简体中文，外挂或内封字幕：
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
+```
+
+## 4. 多过滤叠加
+
+**拨雪寻春**，1080p、MKV、简体外挂、第 5 集：
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
+```
+
+## 5. 跨字幕组聚合一个番剧
+
+543360 下**所有字幕组**的 1080p 简中：
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+```
+
+## 6. 字幕组的全部发布（不限番剧）
+
+`Kirara Fantasia` 最近 50 条，两种写法等价：
+
+<Tabs items={['主入口写法', '短链写法']}>
+  <Tab value="主入口写法">
+    ```txt
+    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=50
+    ```
+  </Tab>
+  <Tab value="短链写法">
+    ```txt
+    https://anibt.net/rss/group/kirara-fantasia.xml
+    ```
+    更短，适合贴 README / 论坛。详见 [其他端点](/docs/open-api/other-endpoints)。
+  </Tab>
+</Tabs>
+
+## 7. 合集 / 特典
+
+```txt
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
+```
+
+## 8. 高吞吐场景（一次性拉满）
+
+```txt
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=1000
+```
+
+<Callout type="info">
+  `/rss/anime.xml` 的 `limit` 上限是 **1000**；`/rss/group/<slug>.xml` 和 `/rss/magnets.xml` 的上限是 **200**。超过会被静默截断到上限。详见 [限流与上限](/docs/open-api/limits)。
+</Callout>

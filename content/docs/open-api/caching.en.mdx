@@ -1,0 +1,203 @@
+---
+title: HTTP caching & 304
+description: ETag, Cache-Control, and stale-while-revalidate behaviour for every public endpoint, with a minimal Python client.
+---
+
+Every public AniBT endpoint (RSS + `/api/*`) returns three layers of caching directives and supports `If-None-Match` / `If-Modified-Since` conditional requests. **Standard HTTP clients pick this up automatically.**
+
+<Callout type="info">
+  Per RFC 7232, `If-None-Match` (ETag) takes precedence over `If-Modified-Since`. If you send both, the server only honours the ETag. Always use ETag.
+</Callout>
+
+## Response headers
+
+```txt title="Returned by every endpoint"
+Cache-Control:    public, max-age=<N>, s-maxage=<N>, stale-while-revalidate=<M>
+CDN-Cache-Control: public, max-age=<N>, stale-while-revalidate=<M>
+ETag:             W/"..."
+Last-Modified:    <RFC 1123 date>
+Vary:             Accept-Encoding
+```
+
+<TypeTable
+  type={{
+    'max-age / s-maxage': {
+      description: 'Within this window the browser / CDN does not revalidate at all — it serves directly from cache.',
+      type: 'directive',
+    },
+    'stale-while-revalidate=M': {
+      description: 'Between max-age expiry and max-age + M, the CDN serves stale content immediately and refreshes from origin asynchronously, single-flight. User-perceived latency stays at zero; origin sees only one extra background request.',
+      type: 'directive',
+    },
+    'Vary: Accept-Encoding': {
+      description: 'Cache key partitions on encoding negotiation only (gzip / br / identity); other request headers do not affect the body and so are not in Vary.',
+      type: 'directive',
+    },
+  }}
+/>
+
+## TTLs per endpoint
+
+| Endpoint                          | `max-age` (browser) | `s-maxage` (CDN) | `stale-while-revalidate` |
+| --------------------------------- | ------------------- | ---------------- | ------------------------ |
+| `/rss/anime.xml`                  | 300s                | 300s             | 86400s                   |
+| `/rss/group/<slug>.xml`           | 120s                | 300s             | 86400s                   |
+| `/rss/magnets.xml` (simple)       | 120s                | 120s             | 600s                     |
+| `/rss/magnets.xml` (complex query) | 60s                 | 60s              | 600s                     |
+| `/api/subtitle-groups`            | 300s                | 300s             | 86400s                   |
+| `/api/seasons/anime`              | 600s                | 600s             | 86400s                   |
+| `/api/anime/groups`               | 300s                | 300s             | 3600s                    |
+
+## ETag formulas
+
+| Endpoint                                            | Formula                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------ |
+| `/rss/anime.xml` `/rss/group` `/rss/magnets.xml`    | `W/"r{itemCount}-{latestPublishedAtMs}-{canonicalUrlHash}"`        |
+| `/api/subtitle-groups`                              | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`        |
+| `/api/seasons/anime`                                | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`     |
+| `/api/anime/groups`                                 | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                        |
+
+These are deterministic: the same query yields the same ETag while the data is unchanged, so multi-replica deployments still hit consistently.
+
+## Verifying 304
+
+```bash title="curl walk-through"
+H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia")
+ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+
+curl -sI -H "If-None-Match: $ETAG" \
+  "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia" | head -1
+# → HTTP/2 304
+```
+
+## Timeline: how max-age + s-maxage + SWR + 304 interact
+
+People often ask, "Does `stale-while-revalidate=86400` (24 h) mean I might receive 24-hour-old data?" — **no, it does not**.
+
+### Cast
+
+- **U** — your RSS client (NetNewsWire, Inoreader, a custom script)
+- **CDN** — Cloudflare edge nodes
+- **O** — origin (AniBT server)
+
+### Endpoint: `/rss/anime.xml` (`max-age=300, s-maxage=300, swr=86400`)
+
+```txt title="Timeline"
+T=0s    U sends the first request.
+        CDN cache empty → goes to O. O snapshots the DB → returns 200 + ETag=A + body.
+        CDN caches the response for 300s (fresh) + 86400s (stale).
+        U receives 200 + body + ETag=A; caches locally for 300s.
+
+T=60s   U polls again (too eagerly).
+        U is still inside its own max-age → does not even send a request.
+        (origin: 0 hits, CDN: 0 hits)
+
+T=400s  U polls (second real request).
+        U's max-age=300 has expired → sends If-None-Match: A.
+        CDN's s-maxage=300 has also expired, but is still inside swr=86400.
+        CDN decision: immediately serve the cached version (with ETag=A) to U,
+                      and asynchronously refresh from O in the background.
+        U gets a response: server sees If-None-Match: A == current ETag → 304 Not Modified.
+        (User experience: zero-latency 304 — no XML to parse.)
+
+        Meanwhile, the CDN refresh:
+          - Data unchanged → O returns 304 → CDN extends fresh window by 300s.
+          - Data changed   → O returns 200 + ETag=B + new body → CDN replaces the cache.
+
+T=700s  U polls again.
+        U sends If-None-Match: A.
+        CDN now has ETag=B (or still A if nothing changed).
+        For ETag=B, the body is returned to U with a 200 since A no longer matches.
+        U receives the new data.
+```
+
+### What `swr=86400` really means
+
+<Callout type="info">
+  **Not** "users will be forced to read 24-hour-old data" — but rather "if origin is unavailable or slow, the CDN can serve up to 24-hour-old content as a fallback rather than erroring out."
+</Callout>
+
+While origin is healthy you **never receive data older than `s-maxage` (5 minutes)**:
+
+- T=400s: CDN immediately serves the 5–10 minute-old version (you usually get a 304 — invisible).
+- A few hundred ms later: CDN has already refreshed asynchronously to the latest version.
+- T=700s on the next poll: you get the latest.
+
+## `cf-cache-status` reference
+
+| Status     | Meaning                                                | Origin hit?       |
+| ---------- | ------------------------------------------------------ | ----------------- |
+| `HIT`      | CDN memory hit, still inside fresh window              | No                |
+| `STALE`    | CDN served stale (within SWR) + async refresh           | 1 async hit       |
+| `MISS`     | CDN had no cache, synchronous origin fetch              | 1 sync hit        |
+| `EXPIRED`  | Cache expired **beyond** SWR; must fetch synchronously  | 1 sync hit        |
+| `BYPASS`   | Cache skipped (rare on public endpoints)                | 1 sync hit        |
+
+## End-to-end curl demo
+
+```bash title="One full verification"
+# Step 1: first request, capture ETag and cache headers
+curl -sSI 'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
+# HTTP/2 200
+# cache-control: public, max-age=300, s-maxage=300, stale-while-revalidate=86400
+# etag: W/"r12-1776624843260-9k2x4f"
+# cf-cache-status: MISS               ← first request fell through to origin
+
+# Step 2: immediately repeat (still inside max-age, but force a conditional req with -H)
+ETAG='W/"r12-1776624843260-9k2x4f"'
+curl -sSI -H "If-None-Match: $ETAG" \
+  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|cf-cache-status)'
+# HTTP/2 304                          ← unchanged
+# cf-cache-status: HIT                ← served from CDN memory
+
+# Step 3: wait 6 minutes (s-maxage expired, now in SWR)
+sleep 360
+curl -sSI -H "If-None-Match: $ETAG" \
+  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  | grep -iE '^(HTTP|cf-cache-status|age)'
+# HTTP/2 304
+# cf-cache-status: STALE              ← stale served, refresh kicked off in background
+# age: 367
+```
+
+## Minimal Python client
+
+```python title="poll.py"
+import requests, time
+
+URL = 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia,haruhana&language=CHS'
+state = {'etag': None, 'last_modified': None}
+
+def poll():
+    headers = {}
+    if state['etag']:          headers['If-None-Match']     = state['etag']
+    if state['last_modified']: headers['If-Modified-Since'] = state['last_modified']
+
+    r = requests.get(URL, headers=headers, timeout=10)
+    if r.status_code == 304:
+        print(f"[{time.strftime('%H:%M:%S')}] 304 not modified, body 0 bytes")
+        return None
+    if r.status_code == 200:
+        state['etag']          = r.headers.get('ETag')
+        state['last_modified'] = r.headers.get('Last-Modified')
+        print(f"[{time.strftime('%H:%M:%S')}] 200 OK, body {len(r.content)} bytes, "
+              f"cf-cache-status={r.headers.get('cf-cache-status')}")
+        return r.content
+    if r.status_code == 429:
+        retry = int(r.headers.get('Retry-After', '60'))
+        print(f"rate-limited, sleeping {retry}s")
+        time.sleep(retry); return poll()
+    r.raise_for_status()
+
+while True:
+    poll()
+    time.sleep(15 * 60)
+```
+
+This loop:
+
+- Caches the ETag from the first response and rides 304 thereafter — **near-zero bandwidth**.
+- Treats `cf-cache-status: STALE` exactly like `HIT` (you neither know nor care).
+- Backs off automatically on 429 using `Retry-After`.

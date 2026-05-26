@@ -1,0 +1,88 @@
+---
+title: Debugging & FAQ
+description: One-line curl recipes for debugging plus the most common RSS-integration questions.
+---
+
+## Quick debug recipes
+
+<Tabs items={['Read RSS items', 'Verify 304', 'List all slugs', 'Pick target groups']}>
+  <Tab value="Read RSS items">
+    ```bash title="First 3 items"
+    curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
+      | grep -E '<title>|<pubDate>'
+    ```
+  </Tab>
+  <Tab value="Verify 304">
+    ```bash title="ETag re-use"
+    H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
+    echo "$H" | grep -iE 'etag|last-modified'
+    ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+    curl -sI -H "If-None-Match: $ETAG" 'https://anibt.net/rss/anime.xml?bgmId=543360' | head -1
+    ```
+  </Tab>
+  <Tab value="List all slugs">
+    ```bash title="Every group"
+    curl -s https://site.anibt.net/api/subtitle-groups \
+      | jq '.data[] | {name, slug, totalReleases}'
+    ```
+  </Tab>
+  <Tab value="Pick target groups">
+    ```bash title="Filter by name"
+    curl -s https://site.anibt.net/api/subtitle-groups \
+      | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
+    ```
+  </Tab>
+</Tabs>
+
+## FAQ
+
+<Accordions>
+  <Accordion title="What is the difference between slug and organizationId?">
+    `slug` is the stable string used in public URLs; `organizationId` is the internal primary key. **Third parties should always use `slug`.**
+  </Accordion>
+  <Accordion title="Why is my If-Modified-Since not taking effect?">
+    Per RFC 7232, **ETag (`If-None-Match`) takes precedence**. If you send both, the server only honours the ETag. Always use ETag.
+  </Accordion>
+  <Accordion title="Will episode=5 match episodeKey=&quot;05&quot;?">
+    Yes — both filters apply. `episode` does numeric exact match; `episodeKey` does string exact match. For batches use `episodeKey=BATCH`.
+  </Accordion>
+  <Accordion title="How do I get a direct torrent link from a release?">
+    The `<enclosure url>` in the RSS is already a magnet URL ready to feed to a BT client (default trackers appended). The `<torrent>` element exposes the infoHash as well.
+  </Accordion>
+  <Accordion title="Will the API change?">
+    Paths and query parameters are part of the public contract — **no breaking changes**. New parameters are additive only. `slug` values are intended to remain stable once published.
+  </Accordion>
+  <Accordion title="Why does a heavily-filtered query return so few items?">
+    `/rss/anime.xml` has a 4000-row candidate scan cap. Very strict filters (e.g. only a few episodes of 1080p simplified-Chinese external subs from one group) may exhaust the pool. This is a deliberate safety valve — see [Rate limits & caps](/docs/open-api/limits).
+  </Accordion>
+  <Accordion title="How long until a new release shows up in my RSS reader?">
+    It depends on your client poll interval combined with the CDN cache window — typically 5–30 minutes. See [Rate limits & caps](/docs/open-api/limits) for the full breakdown. For real-time notifications, use a webhook or Telegram bot instead.
+  </Accordion>
+</Accordions>
+
+## Integration checklist
+
+One last pass:
+
+<Steps>
+  <Step>
+    ### Call [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) once at startup
+    Cache the `name → slug` map locally and never hard-code slugs.
+  </Step>
+  <Step>
+    ### Subscribe via [`/rss/anime.xml`](/docs/open-api/rss-anime) or the short link
+    Prefer `bgmId + groupSlug` for filtered subscriptions; use `/rss/group/<slug>.xml` when no filter is needed.
+  </Step>
+  <Step>
+    ### Always send If-None-Match
+    Cache the previous response's `ETag` and replay it on the next poll. See [HTTP caching & 304](/docs/open-api/caching).
+  </Step>
+  <Step>
+    ### Keep the interval ≥ 5 minutes
+    Tighter polling has no upside and may trigger 429.
+  </Step>
+  <Step>
+    ### Honour Retry-After on 429
+    Do not retry immediately.
+  </Step>
+</Steps>

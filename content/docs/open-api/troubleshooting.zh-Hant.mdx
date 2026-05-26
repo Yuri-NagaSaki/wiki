@@ -1,0 +1,88 @@
+---
+title: 除錯與常見問題
+description: 一行 curl 除錯 + RSS 接入常見問題解答。
+---
+
+## 除錯快查
+
+<Tabs items={['看 RSS 內容', '驗證 304', '查全部 slug', '查目標字幕組']}>
+  <Tab value="看 RSS 內容">
+    ```bash title="前 3 個 item"
+    curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
+      | grep -E '<title>|<pubDate>'
+    ```
+  </Tab>
+  <Tab value="驗證 304">
+    ```bash title="ETag 複用"
+    H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
+    echo "$H" | grep -iE 'etag|last-modified'
+    ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+    curl -sI -H "If-None-Match: $ETAG" 'https://anibt.net/rss/anime.xml?bgmId=543360' | head -1
+    ```
+  </Tab>
+  <Tab value="查全部 slug">
+    ```bash title="全部字幕組"
+    curl -s https://site.anibt.net/api/subtitle-groups \
+      | jq '.data[] | {name, slug, totalReleases}'
+    ```
+  </Tab>
+  <Tab value="查目標字幕組">
+    ```bash title="按名字過濾"
+    curl -s https://site.anibt.net/api/subtitle-groups \
+      | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕組|撥雪尋春")) | {name, slug}'
+    ```
+  </Tab>
+</Tabs>
+
+## 常見問題
+
+<Accordions>
+  <Accordion title="slug 和 organizationId 有什麼區別？">
+    `slug` 是公開 URL 用的穩定字串；`organizationId` 是內部主鍵。**第三方一律用 `slug`。**
+  </Accordion>
+  <Accordion title="為什麼我的 If-Modified-Since 沒生效？">
+    按 RFC 7232，**ETag（`If-None-Match`）優先**。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
+  </Accordion>
+  <Accordion title="episode=5 會匹配 episodeKey='05' 嗎？">
+    是的，二者都會過濾；但 `episode` 是數字精確匹配，`episodeKey` 是字串原樣匹配。合集請用 `episodeKey=BATCH`。
+  </Accordion>
+  <Accordion title="我想知道某個 release 的種子直鏈怎麼辦？">
+    RSS 裡 `<enclosure url>` 已經是可直接餵給 BT 客戶端的磁力 URL（帶預設 tracker），`<torrent>` 元素裡也帶 infoHash。
+  </Accordion>
+  <Accordion title="介面會變嗎？">
+    路徑與查詢引數視為公開契約，**不會做不相容變更**；新增引數只會擴充套件。`slug` 一旦釋出也儘量保持穩定。
+  </Accordion>
+  <Accordion title="為什麼我配置了極嚴格的過濾後返回數量很少？">
+    `/rss/anime.xml` 的候選掃描上限是 4000 條，過濾極嚴格時（例如某番劇某組只有幾集 1080p 簡中外掛）後端可能在 4000 條候選裡篩不到很多。這是設計上的安全閥，詳見 [限流與上限](/docs/open-api/limits)。
+  </Accordion>
+  <Accordion title="新發的種子多久能在 RSS 裡看到？">
+    取決於你客戶端的輪詢間隔與 CDN 快取視窗的疊加。典型 5–30 分鐘，詳見 [限流與上限](/docs/open-api/limits)。需要實時通知請用 webhook / Telegram bot。
+  </Accordion>
+</Accordions>
+
+## 接入 checklist
+
+最後過一遍：
+
+<Steps>
+  <Step>
+    ### 啟動時拉一次 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups)
+    本地快取 `name → slug` 對映，避免硬編碼 slug。
+  </Step>
+  <Step>
+    ### 用 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或短鏈訂閱
+    優先 `bgmId + groupSlug` 組合；不需要過濾時用 `/rss/group/<slug>.xml`。
+  </Step>
+  <Step>
+    ### 永遠帶 If-None-Match
+    快取上次響應的 `ETag`，下次請求帶 `If-None-Match`，詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+  </Step>
+  <Step>
+    ### 間隔 ≥ 5 分鐘
+    更短沒收益，且容易觸發 429。
+  </Step>
+  <Step>
+    ### 見 429 用 Retry-After 退避
+    不要立即重試。
+  </Step>
+</Steps>

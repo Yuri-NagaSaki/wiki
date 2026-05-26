@@ -1,0 +1,145 @@
+---
+title: RSS 主入口
+description: GET /rss/anime.xml —— 支持 bgmId、字幕组 slug 与多 Tag 任意组合的 RSS 主入口，兼容 Mikan 链接。
+---
+
+`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合订阅一个番剧 / 字幕组 / 全站发布。
+
+<Callout type="warn">
+  必须给 `bgmId` 或 `groupSlug` **至少之一**。两者都不传会被拒绝。
+</Callout>
+
+## URL
+
+```txt title="URL"
+GET https://anibt.net/rss/anime.xml?<query>
+```
+
+## 查询参数
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi.tv subject id。别名：bangumiId。',
+      type: 'integer',
+    },
+    'groupSlug': {
+      description: '字幕组 slug。别名：subgroupSlug、subgroupid（与 Mikan 的旧链接兼容）。',
+      type: 'string',
+    },
+    'resolution': {
+      description: '4K / 2160p / 1080p / 720p / 480p / 360p。可重复或用逗号分隔。',
+      type: 'enum[]',
+    },
+    'language': {
+      description: 'CHS / CHT / JP / EN。可重复或用逗号分隔。',
+      type: 'enum[]',
+    },
+    'format': {
+      description: 'MKV / MP4 / AVI / WEBM。可重复或用逗号分隔。',
+      type: 'enum[]',
+    },
+    'subtitle': {
+      description: 'EXTERNAL（外挂）/ INTERNAL（内封）/ EMBEDDED（内嵌）/ NONE。可重复或用逗号分隔。',
+      type: 'enum[]',
+    },
+    'episode': {
+      description: '数字集数，精确匹配，用于排序和过滤。',
+      type: 'integer',
+    },
+    'episodeKey': {
+      description: '显示集数键，如 01、00-01、BATCH。字符串原样匹配。',
+      type: 'string',
+    },
+    'limit': {
+      description: '1..1000，默认 100。',
+      type: 'integer',
+      default: '100',
+    },
+  }}
+/>
+
+## 重复参数两种写法等价
+
+```txt title="标准重复 query（推荐）"
+?resolution=1080p&resolution=720p
+```
+
+```txt title="逗号分隔（也支持）"
+?resolution=1080p,720p
+```
+
+## 响应
+
+返回 **RSS 2.0 + BEP 36**，每个 `<item>` 包含：
+
+<TypeTable
+  type={{
+    '<title>': {
+      description: '形如 [字幕组] 番剧 - EP05 [1080p] [CHS+JP] [MKV]。',
+      type: 'string',
+    },
+    '<link>': {
+      description: '发布详情页（/release/<id>）。',
+      type: 'url',
+    },
+    '<guid isPermaLink="false">': {
+      description: '稳定 release id。',
+      type: 'string',
+    },
+    '<pubDate>': {
+      description: 'RFC 822 时间。',
+      type: 'datetime',
+    },
+    '<description>': {
+      description: 'CDATA，含分辨率 / 语言 / 字幕 / 容量 / 备注。',
+      type: 'string',
+    },
+    '<enclosure>': {
+      description: 'BEP 36，磁力 URL，type="application/x-bittorrent"。已自动追加站点默认 tracker。',
+      type: 'magnet',
+    },
+    '<torrent xmlns="http://xmlns.ezrss.it/0.1/">': {
+      description: 'infoHash + 内嵌默认 tracker。',
+      type: 'element',
+    },
+  }}
+/>
+
+## 后端选择最优索引
+
+后端根据传入参数自动选索引：
+
+| 提供                    | 使用索引                |
+| ----------------------- | ----------------------- |
+| `bgmId` + `groupSlug`   | `groupId_animeId`       |
+| 仅 `bgmId`              | `animeId`               |
+| 仅 `groupSlug`          | `groupId_publishedAt`   |
+
+随后在内存里按 Tag 过滤（**最多扫描 4000 条候选**），按 `publishedAt` 倒序截断 `limit`。SSR 层叠加 **300 秒缓存**（按规范化后的 query 串当 key），同一查询在缓存窗口内只命中一次后端。
+
+## Mikan 兼容
+
+旧的 Mikan 链接可以直接换主机，参数原样工作：
+
+<Tabs items={['原始 Mikan 链接', '直接换主机', '推荐写法']}>
+  <Tab value="原始 Mikan 链接">
+    ```txt
+    https://mikanani.me/RSS/Bangumi?bangumiId=3921&subgroupid=615
+    ```
+  </Tab>
+  <Tab value="直接换主机">
+    ```txt
+    https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
+    ```
+    `bangumiId`、`subgroupid` 作为兼容别名继续工作。
+  </Tab>
+  <Tab value="推荐写法">
+    ```txt
+    https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
+    ```
+    在新代码中使用规范名称。
+  </Tab>
+</Tabs>
+
+继续：[实战示例](/docs/open-api/examples) 演示了 8 种典型查询组合。

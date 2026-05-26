@@ -1,0 +1,269 @@
+---
+title: 其他端點
+description: 字幕組短鏈 RSS、全站磁力 RSS、季度番劇 JSON、單番劇字幕組 JSON。
+---
+
+主入口之外，AniBT 還提供四個常用端點：兩個 RSS（短鏈 + 全站）、兩個 JSON（季度 + 單番劇）。
+
+<Cards>
+  <Card title="字幕組短鏈 RSS" href="#字幕組短鏈-rssgroupslugxml" description="GET /rss/group/<slug>.xml" />
+  <Card title="全站磁力 RSS" href="#全站磁力-rssmagnetsxml" description="GET /rss/magnets.xml" />
+  <Card title="季度番劇 JSON" href="#季度番劇-apiseasonsanime" description="GET /api/seasons/anime" />
+  <Card title="單番劇字幕組 JSON" href="#單番劇字幕組-apianimegroups" description="GET /api/anime/groups" />
+</Cards>
+
+## 字幕組短鏈 `/rss/group/<slug>.xml`
+
+等價於 `/rss/anime.xml?groupSlug=<slug>` 但 URL 更短，便於貼 README / 論壇。
+
+<Callout type="warn">
+  路徑必須以 `.xml` 結尾。支援 `?limit=`，**不支援** Tag 過濾；需要過濾請走 [RSS 主入口](/docs/open-api/rss-anime)。
+</Callout>
+
+```txt title="示例"
+https://anibt.net/rss/group/kirara-fantasia.xml
+https://anibt.net/rss/group/pre-s.xml
+https://anibt.net/rss/group/kitauji-sub.xml
+https://anibt.net/rss/group/haruhana.xml
+```
+
+## 全站磁力 `/rss/magnets.xml`
+
+適合"看看全站最近發了什麼"。
+
+```txt title="基本用法"
+https://anibt.net/rss/magnets.xml
+https://anibt.net/rss/magnets.xml?limit=200
+https://anibt.net/rss/magnets.xml?q=葬送的芙莉蓮
+https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
+```
+
+<Callout type="info">
+  簡單查詢快取 **120 秒**；帶 `q` + 多 filter 的複雜查詢快取 **60 秒**。兩者都疊加 `stale-while-revalidate=600s`，CDN 在視窗過期後仍立即吐舊版給使用者、後臺非同步重新整理。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+</Callout>
+
+## 季度番劇 `/api/seasons/anime`
+
+第三方追番站 / 看板 / 編輯器輔助使用。**返回當季已上架番劇 + 可選季度列表。**
+
+### 請求
+
+```txt title="多種呼叫方式"
+GET https://site.anibt.net/api/seasons/anime
+GET https://site.anibt.net/api/seasons/anime?season=2026春
+GET https://site.anibt.net/api/seasons/anime?season=2026-SPRING   # 也接受英文形式
+GET https://site.anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單個番劇
+```
+
+### Query
+
+<TypeTable
+  type={{
+    'season': {
+      description: '形如 2026春 / 2026夏 / 2026秋 / 2026冬，也接受 2026-SPRING 等 ISO 形式。',
+      type: 'string',
+      default: '當前季',
+    },
+    'bgmId': {
+      description: '精確查詢單個番劇（按 BGM subject id）。優先順序高於 season：傳入後忽略 season 過濾，僅返回該番劇；未匹配返回 total: 0 且 byWeekday: []。requestedSeason 自動回填為該番劇所屬季度。',
+      type: 'integer',
+    },
+  }}
+/>
+
+### 響應欄位（節選）
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "ts": 1776841966624,
+  "data": {
+    "currentSeason": "2026春",
+    "requestedSeason": "2026春",
+    "availableSeasons": ["2024春", "2024夏", "...", "2026秋"],
+    "byWeekday": [
+      {
+        "weekday": 1,
+        "weekdayLabel": "週一",
+        "animes": [
+          {
+            "bgmId": 543360,
+            "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
+            "cover": "https://r2.anibt.net/anime_covers/.../...jpg",
+            "title": {
+              "primary": "上伊那牡丹，酒醉身姿似百合花般",
+              "chinese": "上伊那牡丹，酒醉身姿似百合花般",
+              "romaji": "Kamiina Botan, Yoeru Sugata wa Yuri no Hana",
+              "english": "Botan Kamiina Fully Blossoms When Drunk",
+              "japanese": "上伊那ぼたん、酔へる姿は百合の花"
+            },
+            "format": "TV",
+            "kind": "TV",
+            "rating": 73,
+            "airingAt": 1764259200,
+            "weekday": 1,
+            "weekdayLabel": "週一"
+          }
+        ]
+      },
+      { "weekday": 0, "weekdayLabel": "週日", "animes": [ /* ... */ ] },
+      { "weekday": null, "weekdayLabel": "未排播", "animes": [ /* 劇場版 / OVA 等 */ ] }
+    ],
+    "total": 106
+  }
+}
+```
+
+### 關鍵欄位
+
+<TypeTable
+  type={{
+    'ts': {
+      description: '服務端寫出響應的牆鍾時間（毫秒）。兩次請求拿到相同 ts ⇒ 命中了 CDN 快取；不同 ⇒ 觸達了源站。可用來肉眼驗證快取。',
+      type: 'number',
+    },
+    'byWeekday': {
+      description: '按周幾分組的番劇列表。順序：週一(1) → 週二(2) → … → 週日(0) → 未排播(null)，缺失的周幾不出現。同一組內按 airingAt 升序，未知放送時間排最後。',
+      type: 'array',
+    },
+    'availableSeasons': {
+      description: '自動探測當前季 ±N 內至少有一部番劇的季度，按時間升序，一定包含當前季。可直接渲染下拉框。',
+      type: 'string[]',
+    },
+    'weekday': {
+      description: '0=週日 … 6=週六，按 Asia/Shanghai 計算；null 表示無放送時間表（劇場版 / OVA / 已完結）。',
+      type: 'number | null',
+    },
+    'format': {
+      description: 'AniList 原始列舉：TV / TV_SHORT / MOVIE / SPECIAL / OVA / ONA / MUSIC，未知為 null。',
+      type: 'enum',
+    },
+    'kind': {
+      description: '簡化分類：TV（含 TV_SHORT）/ MOVIE / OTHER（OVA/ONA/SPECIAL/MUSIC/未知）。',
+      type: 'enum',
+    },
+    'rating': {
+      description: '0–100（來源 AniList averageScore），未知為 null。',
+      type: 'number | null',
+    },
+    'title.japanese': {
+      description: '日文原標題（來源 AniList title.native）。所有公開 API 輸出對齊這一命名。',
+      type: 'string',
+    },
+  }}
+/>
+
+### 快取與限流
+
+| 專案             | 值                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| 速率限制         | **30 次 / 60 秒 / IP**（與 `/api/anime/groups` 共用視窗）                                |
+| `Cache-Control`  | `max-age=600, s-maxage=600, stale-while-revalidate=86400`（**10 分鐘新鮮 + 24h SWR**） |
+| 條件請求         | `If-None-Match`（ETag 形如 `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`）、`If-Modified-Since` |
+
+```bash title="拉取與 304"
+curl 'https://site.anibt.net/api/seasons/anime'
+curl 'https://site.anibt.net/api/seasons/anime?season=2026春'
+curl 'https://site.anibt.net/api/seasons/anime?bgmId=543360'
+
+ETAG=$(curl -sSI 'https://site.anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
+curl -i 'https://site.anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
+# → HTTP/2 304
+```
+
+## 單番劇字幕組 `/api/anime/groups`
+
+> 「這部番都誰在做？」一個 `bgmId` 即可拿到全部正在釋出的字幕組、最近更新時間，以及**最近 30 條釋出**。
+
+**專為給 `/rss/anime.xml` 拼 `groupSlug` 提供候選**，也方便客戶端直接做"番劇詳情頁 / 資源列表"。
+
+### 請求
+
+```txt
+GET https://site.anibt.net/api/anime/groups?bgmId=543360
+```
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi ID（正整數），例如 543360。',
+      type: 'integer',
+    },
+  }}
+/>
+
+### 響應（節選）
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "ts": 1776841967132,
+  "data": {
+    "bgmId": 543360,
+    "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
+    "title": { /* primary / chinese / romaji / english / japanese */ },
+    "groups": [
+      {
+        "groupId": "org_aagmgM9i0ZyR",
+        "slug": "kitauji-sub",
+        "name": "北宇治字幕組",
+        "status": "ACTIVE",
+        "lastUpdatedAt": 1776624843260,
+        "items": [
+          {
+            "releaseId": "rel_fItEHE7r1gR1",
+            "title": "[北宇治字幕組] 上伊那牡丹，酒醉身姿似百合 [02][WebRip][HEVC_AAC][繁日內嵌]",
+            "magnet": "magnet:?xt=urn:btih:282e2b…",
+            "episodeKey": "2",
+            "resolution": "1080p",
+            "language": ["CHT", "JP"],
+            "subtitle": "EMBEDDED",
+            "publishedAt": 1776624843260
+          }
+          /* … 最多 30 條，按 publishedAt desc … */
+        ]
+      }
+      /* … 其他字幕組 … */
+    ],
+    "total": 4
+  }
+}
+```
+
+### 欄位
+
+- `groups` 列表按 `lastUpdatedAt` 倒序（最近發過的排前面）。
+- `items`：該字幕組對該番劇最近釋出的資源，**最多 30 條**，按 `publishedAt` desc。可直接渲染"番劇 × 字幕組"維度的資源面板，避免單獨拉 RSS。
+  - `magnet` 可能為 `null`（僅有種子檔案、未生成磁力時）。
+  - `episodeKey` 是穩定的集數鍵（如 `"01"`、`"SP01"`），便於客戶端排序 / 聚合。
+  - `language`：`("CHS" | "CHT" | "JP" | "EN")[]`。
+  - `subtitle`：`"EMBEDDED" | "EXTERNAL" | "BUILT_IN" | "NONE"`（內嵌 / 外掛 / 內封 / 無）。
+- `slug` 與 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 完全一致，可直接餵給 `/rss/anime.xml?groupSlug=…`。
+- 如果該 `bgmId` 未上架或被隱藏，返回 `404 ANIME_NOT_FOUND`。
+
+### 典型用法 — 給追番器拼 RSS
+
+```bash title="兩步拼出 RSS"
+# Step 1: 知道 bgmId，拉它的字幕組列表
+curl -s 'https://site.anibt.net/api/anime/groups?bgmId=543360' \
+  | jq -r '.data.groups[].slug'
+# kitauji-sub
+# kirara-fantasia
+# pre-s
+# haruhana
+
+# Step 2: 拼 RSS（多個字幕組、CHS+1080p）
+curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-fantasia,pre-s,haruhana&language=CHS&resolution=1080p&limit=50'
+```
+
+### 快取與限流
+
+| 專案             | 值                                                                              |
+| ---------------- | ------------------------------------------------------------------------------- |
+| 速率限制         | **30 次 / 60 秒 / IP**（與 `/api/seasons/anime` 共用視窗）                        |
+| `Cache-Control`  | `max-age=300, s-maxage=300, stale-while-revalidate=3600`（**5 分鐘新鮮 + 1h SWR**） |
+| 條件請求         | `If-None-Match`（`W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`）、`If-Modified-Since` |
+
+<Callout type="info">
+  當字幕組發新 release，`lastUpdatedAt` 跳動，ETag 失效，快取自然重新整理。輪詢頻率建議**不要短於 5 分鐘**——更高頻對你沒有任何收益。
+</Callout>
