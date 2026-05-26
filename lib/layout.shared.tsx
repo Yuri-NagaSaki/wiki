@@ -1,4 +1,3 @@
-import { BookOpenText } from 'lucide-react';
 import { i18n, localizedPath } from '@/lib/i18n';
 import { uiTranslations } from 'fumadocs-ui/i18n';
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
@@ -65,7 +64,12 @@ export function baseOptions(locale: string): BaseLayoutProps {
     nav: {
       title: (
         <span className="inline-flex items-center gap-2 font-semibold">
-          <BookOpenText className="size-5" aria-hidden="true" />
+          <img
+            src="/favicon.png"
+            alt=""
+            className="size-5 rounded-sm"
+            aria-hidden="true"
+          />
           AniBT Wiki
         </span>
       ),

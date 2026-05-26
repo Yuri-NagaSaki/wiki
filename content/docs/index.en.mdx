@@ -3,52 +3,38 @@ title: Getting Started
 description: AniBT's positioning and site sync documentation entry point.
 ---
 
-<div className="anibt-start">
-  <section className="anibt-start-hero">
-    <p className="anibt-start-kicker">AniBT / Public Anime Tracker</p>
-    <h2>AniBT is a public anime torrent tracker focused on anime and subtitle groups.</h2>
-    <p>
-      We want to give subtitle group members a platform for sharing their releases with the community, while helping users automatically find and download the content they want.
-    </p>
-  </section>
+AniBT is a public anime torrent tracker focused on anime and subtitle groups.
 
-  <section className="anibt-start-strip" aria-label="AniBT focus areas">
-    <div>
-      <strong>Subtitle Groups</strong>
-      <span>Publish, sync, and manage release information</span>
-    </div>
-    <div>
-      <strong>Anime Users</strong>
-      <span>Find the releases they care about faster</span>
-    </div>
-    <div>
-      <strong>Automation</strong>
-      <span>Reduce repeated work with site sync</span>
-    </div>
-  </section>
-</div>
+We want to give subtitle group members a platform for sharing their releases with the community, while helping users automatically find and download the content they want.
 
 ## Site Sync
 
-<div className="anibt-guide-grid">
-  <a className="anibt-guide-link" href="/en/docs/site-sync/bangumi">
-    <span>Bangumi Moe</span>
-    <small>Copy the logged-in Cookie and fill in sync identity details</small>
-  </a>
-  <a className="anibt-guide-link" href="/en/docs/site-sync/mikan">
-    <span>Mikan</span>
-    <small>Fill in the API Token and query group IDs</small>
-  </a>
-  <a className="anibt-guide-link" href="/en/docs/site-sync/acgnx">
-    <span>ACGNX</span>
-    <small>Copy the UID and API Token from account API settings</small>
-  </a>
-  <a className="anibt-guide-link" href="/en/docs/site-sync/acgrip">
-    <span>ACG.rip</span>
-    <small>Copy only the token suffix from the dashboard</small>
-  </a>
-  <a className="anibt-guide-link" href="/en/docs/site-sync/nyaa">
-    <span>Nyaa</span>
-    <small>Copy the session value and add the session= prefix</small>
-  </a>
-</div>
+Use these guides to configure AniBT sync settings for external sites. Each guide covers one site and its required Token, Cookie, or ID values.
+
+<Cards>
+  <Card
+    title="Bangumi Moe Sync"
+    href="/en/docs/site-sync/bangumi"
+    description="Copy the logged-in Cookie and fill in publisher identity details."
+  />
+  <Card
+    title="Mikan Sync"
+    href="/en/docs/site-sync/mikan"
+    description="Fill in the API Token and query group IDs."
+  />
+  <Card
+    title="ACGNX Sync"
+    href="/en/docs/site-sync/acgnx"
+    description="Copy the UID and API Token from account API settings."
+  />
+  <Card
+    title="ACG.rip Sync"
+    href="/en/docs/site-sync/acgrip"
+    description="Copy the API Token from the dashboard without the prefix."
+  />
+  <Card
+    title="Nyaa Sync"
+    href="/en/docs/site-sync/nyaa"
+    description="Copy the session value from DevTools and add the session= prefix."
+  />
+</Cards>

@@ -6,11 +6,26 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://anibt.net'),
   title: {
     default: 'AniBT Wiki',
     template: '%s | AniBT Wiki',
   },
   description: 'AniBT 使用文档与站点同步指南。',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  openGraph: {
+    title: 'AniBT Wiki',
+    description: 'AniBT 使用文档与站点同步指南。',
+    images: ['/og-image.webp'],
+  },
 };
 
 export default async function RootLayout({
