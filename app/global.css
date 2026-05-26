@@ -4,11 +4,36 @@
 
 :root {
   color-scheme: light;
+  --anibt-bg-base: #fafafa;
+  --anibt-bg-elevated: #ffffff;
+  --anibt-paper: color-mix(in srgb, #ffffff 90%, #ffd64d 10%);
+  --anibt-text-primary: #1a1a1c;
+  --anibt-text-secondary: #58585d;
+  --anibt-text-tertiary: #88888e;
+  --anibt-accent-primary: #ff5a8d;
+  --anibt-accent-secondary: #3ebdb4;
+  --anibt-accent-warning: #ffd64d;
+  --anibt-border: color-mix(in srgb, #e4e4e7 88%, var(--anibt-accent-primary) 12%);
+  --anibt-shadow: 0 18px 48px color-mix(in srgb, var(--anibt-text-primary) 10%, transparent);
+}
+
+.dark {
+  --anibt-bg-base: #0a0a0b;
+  --anibt-bg-elevated: #141416;
+  --anibt-paper: color-mix(in srgb, #141416 88%, #ffe66d 12%);
+  --anibt-text-primary: #e8e8ea;
+  --anibt-text-secondary: #a1a1a6;
+  --anibt-text-tertiary: #68686d;
+  --anibt-accent-primary: #ff6b9d;
+  --anibt-accent-secondary: #4ecdc4;
+  --anibt-accent-warning: #ffe66d;
+  --anibt-border: color-mix(in srgb, rgba(255, 255, 255, 0.08) 86%, var(--anibt-accent-primary) 14%);
+  --anibt-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
 }
 
 body {
   background:
-    radial-gradient(circle at top left, color-mix(in oklch, var(--fd-primary) 14%, transparent), transparent 34rem),
+    linear-gradient(135deg, var(--anibt-bg-base), color-mix(in srgb, var(--anibt-bg-base) 94%, var(--anibt-accent-primary) 6%)),
     var(--fd-background);
 }
 
@@ -16,4 +41,389 @@ body {
   background:
     linear-gradient(120deg, color-mix(in oklch, var(--fd-primary) 12%, transparent), transparent 42%),
     color-mix(in oklch, var(--fd-card) 96%, var(--fd-primary));
+}
+
+.anibt-wiki-home {
+  color: var(--anibt-text-primary);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--anibt-bg-base) 88%, var(--anibt-accent-secondary) 12%), var(--anibt-bg-base) 32rem),
+    var(--anibt-bg-base);
+}
+
+.anibt-wiki-home::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle, color-mix(in srgb, var(--anibt-text-primary) 5%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, transparent, black 10rem, transparent 42rem);
+}
+
+.anibt-wiki-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--anibt-border);
+  background: var(--anibt-bg-base);
+}
+
+.anibt-hero-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('/og-image.webp');
+  background-position: center right;
+  background-size: cover;
+  opacity: 0.82;
+}
+
+.dark .anibt-hero-image {
+  opacity: 0.42;
+  filter: saturate(0.92) contrast(1.04);
+}
+
+.anibt-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--anibt-bg-base) 0%, color-mix(in srgb, var(--anibt-bg-base) 96%, transparent) 42%, color-mix(in srgb, var(--anibt-bg-base) 42%, transparent) 72%, var(--anibt-bg-base) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--anibt-bg-base) 72%, transparent), transparent 42%, var(--anibt-bg-base) 100%);
+}
+
+.anibt-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--anibt-accent-primary);
+}
+
+.anibt-kicker::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--anibt-accent-secondary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--anibt-accent-secondary) 16%, transparent);
+}
+
+.anibt-hero-title {
+  margin-top: 1rem;
+  max-width: 42rem;
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  font-size: 2.85rem;
+  line-height: 1.05;
+  font-weight: 900;
+  color: var(--anibt-text-primary);
+}
+
+@media (min-width: 640px) {
+  .anibt-hero-title {
+    font-size: 4.4rem;
+  }
+}
+
+.anibt-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.68rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.anibt-button:hover {
+  transform: translateY(-1px);
+}
+
+.anibt-button:active {
+  transform: translateY(0);
+}
+
+.anibt-button-primary {
+  border: 1px solid color-mix(in srgb, var(--anibt-accent-primary) 72%, var(--anibt-border));
+  background: linear-gradient(135deg, var(--anibt-accent-primary), color-mix(in srgb, var(--anibt-accent-primary) 72%, var(--anibt-accent-secondary)));
+  color: white;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--anibt-accent-primary) 26%, transparent);
+}
+
+.anibt-button-secondary,
+.anibt-button-ghost {
+  border: 1px solid var(--anibt-border);
+  background: color-mix(in srgb, var(--anibt-bg-elevated) 72%, transparent);
+  color: var(--anibt-text-primary);
+  backdrop-filter: blur(12px);
+}
+
+.anibt-button-secondary:hover,
+.anibt-button-ghost:hover {
+  border-color: color-mix(in srgb, var(--anibt-accent-secondary) 48%, var(--anibt-border));
+  background: color-mix(in srgb, var(--anibt-bg-elevated) 88%, var(--anibt-accent-secondary) 12%);
+}
+
+.anibt-signal-strip {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.anibt-signal-strip span {
+  border-radius: 999px;
+  border: 1px solid var(--anibt-border);
+  background: color-mix(in srgb, var(--anibt-bg-elevated) 68%, transparent);
+  padding: 0.42rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--anibt-text-secondary);
+  backdrop-filter: blur(10px);
+}
+
+.anibt-hero-console {
+  border-radius: 0.5rem;
+  border: 1px solid var(--anibt-border);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--anibt-bg-elevated) 82%, var(--anibt-accent-primary) 18%), color-mix(in srgb, var(--anibt-bg-elevated) 88%, var(--anibt-accent-secondary) 12%));
+  box-shadow: var(--anibt-shadow);
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+}
+
+.anibt-console-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 1px solid var(--anibt-border);
+  padding: 0.75rem 0.85rem;
+}
+
+.anibt-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+}
+
+.anibt-dot-pink {
+  background: var(--anibt-accent-primary);
+}
+
+.anibt-dot-teal {
+  background: var(--anibt-accent-secondary);
+}
+
+.anibt-dot-yellow {
+  background: var(--anibt-accent-warning);
+}
+
+.anibt-console-body {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1rem;
+}
+
+.anibt-console-row {
+  display: flex;
+  min-height: 2.45rem;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--anibt-border) 72%, transparent);
+  background: color-mix(in srgb, var(--anibt-bg-base) 54%, transparent);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 750;
+  color: var(--anibt-text-primary);
+}
+
+.anibt-guide-mark {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: var(--anibt-accent-primary);
+}
+
+.anibt-guide-mark-teal {
+  background: var(--anibt-accent-secondary);
+}
+
+.anibt-guide-mark-yellow {
+  background: var(--anibt-accent-warning);
+}
+
+.anibt-guide-mark-violet {
+  background: #9b7cff;
+}
+
+.anibt-guide-mark-blue {
+  background: #4aa3ff;
+}
+
+.anibt-section {
+  border-bottom: 1px solid var(--anibt-border);
+  background: var(--anibt-bg-base);
+}
+
+.anibt-section-paper {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--anibt-paper) 86%, transparent), var(--anibt-bg-base)),
+    var(--anibt-bg-base);
+}
+
+.anibt-guide-card {
+  position: relative;
+  display: flex;
+  min-height: 15.5rem;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--anibt-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--anibt-bg-elevated) 90%, transparent), color-mix(in srgb, var(--anibt-bg-elevated) 72%, transparent)),
+    var(--anibt-bg-elevated);
+  padding: 1rem;
+  text-decoration: none;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--anibt-text-primary) 7%, transparent);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.anibt-guide-card::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 0.25rem;
+  background: var(--guide-accent, var(--anibt-accent-primary));
+}
+
+.anibt-guide-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--guide-accent, var(--anibt-accent-primary)) 52%, var(--anibt-border));
+  box-shadow: 0 18px 38px color-mix(in srgb, var(--guide-accent, var(--anibt-accent-primary)) 16%, transparent);
+}
+
+.anibt-guide-card-pink {
+  --guide-accent: var(--anibt-accent-primary);
+}
+
+.anibt-guide-card-teal {
+  --guide-accent: var(--anibt-accent-secondary);
+}
+
+.anibt-guide-card-yellow {
+  --guide-accent: var(--anibt-accent-warning);
+}
+
+.anibt-guide-card-violet {
+  --guide-accent: #9b7cff;
+}
+
+.anibt-guide-card-blue {
+  --guide-accent: #4aa3ff;
+}
+
+.anibt-guide-icon {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--guide-accent, var(--anibt-accent-primary)) 14%, transparent);
+  color: var(--guide-accent, var(--anibt-accent-primary));
+}
+
+.anibt-guide-meta {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--guide-accent, var(--anibt-accent-primary)) 24%, var(--anibt-border));
+  padding: 0.24rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--guide-accent, var(--anibt-accent-primary)) 78%, var(--anibt-text-primary));
+}
+
+.anibt-step {
+  display: flex;
+  gap: 0.85rem;
+  border-left: 2px solid color-mix(in srgb, var(--anibt-accent-primary) 26%, var(--anibt-border));
+  padding: 0.3rem 0 0.3rem 1rem;
+}
+
+.anibt-step-number {
+  display: inline-flex;
+  width: 1.65rem;
+  height: 1.65rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--anibt-accent-primary) 14%, transparent);
+  color: var(--anibt-accent-primary);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.anibt-shot-card {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--anibt-border);
+  background: color-mix(in srgb, var(--anibt-bg-elevated) 78%, transparent);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--anibt-text-primary) 8%, transparent);
+}
+
+.anibt-shot-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.anibt-shot-card figcaption {
+  border-top: 1px solid var(--anibt-border);
+  padding: 0.75rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--anibt-text-primary);
+}
+
+.anibt-section-final {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--anibt-bg-base) 82%, var(--anibt-accent-primary) 18%), color-mix(in srgb, var(--anibt-bg-base) 90%, var(--anibt-accent-secondary) 10%)),
+    var(--anibt-bg-base);
+}
+
+@media (max-width: 639px) {
+  .anibt-hero-title {
+    font-size: 2.45rem;
+  }
+
+  .anibt-hero-image {
+    background-position: 72% top;
+  }
+
+  .anibt-hero-scrim {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--anibt-bg-base) 78%, transparent), var(--anibt-bg-base) 74%),
+      linear-gradient(90deg, var(--anibt-bg-base), color-mix(in srgb, var(--anibt-bg-base) 38%, transparent));
+  }
+
+  .anibt-guide-card {
+    min-height: auto;
+  }
 }

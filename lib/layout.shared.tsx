@@ -70,7 +70,9 @@ export function baseOptions(locale: string): BaseLayoutProps {
             className="size-5 rounded-sm"
             aria-hidden="true"
           />
-          AniBT Wiki
+          <span className="bg-gradient-to-r from-[var(--anibt-accent-primary)] to-[var(--anibt-accent-secondary)] bg-clip-text font-serif font-black italic text-transparent">
+            AniBT Wiki
+          </span>
         </span>
       ),
       url: localizedPath(locale, '/'),
