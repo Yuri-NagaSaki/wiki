@@ -107,6 +107,7 @@ export function baseOptions(locale: string): BaseLayoutProps {
 
   return {
     i18n: true,
+    githubUrl: 'https://github.com/AniBT-Net/wiki',
     nav: {
       title: (
         <span className="inline-flex items-center gap-2 font-semibold">
