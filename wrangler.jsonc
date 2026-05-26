@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wiki",
+  "main": ".open-next/worker.js",
+  "build": {
+    "command": "pnpm opennextjs-cloudflare build"
+  },
+  "compatibility_date": "2026-05-26",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "wiki"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
