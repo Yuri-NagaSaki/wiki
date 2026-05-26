@@ -3,9 +3,12 @@
   "pages": [
     "index",
     "subtitle-groups",
+    "me",
+    "bgm-search",
     "rss-anime",
     "examples",
     "other-endpoints",
+    "releases-publish",
     "caching",
     "limits",
     "troubleshooting"

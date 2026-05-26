@@ -1,0 +1,187 @@
+---
+title: 发布资源
+description: POST /api/releases/publish —— 字幕组用 API Key 发布种子的写入端点；支持 JSON（磁力）和 multipart/form-data（种子文件）两种格式。
+---
+
+`/api/releases/publish` 是字幕组**写入**资源的唯一端点。需要在请求头里携带字幕组 API Key 鉴权；支持 `application/json`（直接传磁力链接）和 `multipart/form-data`（上传种子文件）两种格式。
+
+<Callout type="warn">
+  这是**写入接口**，调用频率与配额由字幕组维度独立计数；与公开 RSS 的 IP 速率窗口不共享。Key 一旦泄露请立即在后台重置。
+</Callout>
+
+## URL
+
+```http title="HTTP"
+POST https://site.anibt.net/api/releases/publish
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+## 两种请求格式
+
+<Tabs items={['multipart/form-data（推荐）', 'application/json']}>
+  <Tab value="multipart/form-data（推荐）">
+    上传种子文件，后端**自动从种子里提取**磁力链接、infoHash、文件大小等元数据。
+
+    ```bash title="上传种子"
+    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'bgmId=400602' \
+      -F 'title=[字幕组] 葬送的芙莉莲 - 01 [1080p].mkv' \
+      -F 'episodeKey=01' \
+      -F 'resolution=1080p' \
+      -F 'language=CHS' -F 'language=JP' \
+      -F 'subtitle=EXTERNAL' \
+      -F 'format=MKV' \
+      -F 'torrent=@/path/to/release.torrent'
+    ```
+
+    `language` 重复表示多个值（CHS + JP）。
+  </Tab>
+  <Tab value="application/json">
+    直接给磁力链接（**仍然需要先有种子**，因为后端只接受能解析的合法 magnet）。
+
+    ```bash title="JSON 请求"
+    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json' \
+      --data @- <<'JSON'
+    {
+      "bgmId": 400602,
+      "title": "[字幕组] 葬送的芙莉莲 - 01 [1080p].mkv",
+      "magnetBase64": "magnet:?xt=urn:btih:...",
+      "episodeKey": "01",
+      "resolution": "1080p",
+      "language": ["CHS", "JP"],
+      "subtitle": "EXTERNAL",
+      "format": "MKV",
+      "fileSize": 734003200,
+      "notes": "**字体内嵌**，缺帧问题已修复。"
+    }
+    JSON
+    ```
+
+    `magnetBase64` 既接受原始 magnet 链接，也接受 Base64 编码后的磁力。
+  </Tab>
+</Tabs>
+
+## 参数
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi 番剧 ID。可通过 /api/bgm/search 查询。',
+      type: 'number',
+      required: true,
+    },
+    'title': {
+      description: '资源文件名，例如 [字幕组] 番名 - 01 [1080p].mkv。',
+      type: 'string',
+      required: true,
+    },
+    'torrent': {
+      description: '种子文件（multipart 必填）。后端会自动提取磁力链接、标题、文件大小、infoHash。',
+      type: 'file',
+      required: true,
+    },
+    'magnetBase64': {
+      description: '可选。原始 magnet 链接或 Base64 编码。不提供时从种子文件自动提取。',
+      type: 'string',
+    },
+    'episodeKey': {
+      description: '集数标识，如 01 / 01-13 / 合集 / SP / MOVIE / OVA。',
+      type: 'string',
+    },
+    'resolution': {
+      description: '2160p / 1080p / 720p / 480p / 360p。',
+      type: 'enum',
+    },
+    'language': {
+      description: 'CHS / CHT / JP / EN，可重复，最多 4 项。',
+      type: 'enum[]',
+    },
+    'subtitle': {
+      description: 'EXTERNAL（外挂）/ INTERNAL（内封）/ EMBEDDED（内嵌）/ NONE（无字幕）。',
+      type: 'enum',
+    },
+    'format': {
+      description: 'MKV / MP4 / AVI / WEBM。',
+      type: 'enum',
+    },
+    'version': {
+      description: '版本号，例如 v1、v2，用于重发修订版。',
+      type: 'string',
+    },
+    'fileSize': {
+      description: '文件大小（字节）。可从种子文件自动提取。',
+      type: 'number',
+    },
+    'notes': {
+      description: '发布备注，支持 Markdown。',
+      type: 'string',
+    },
+    'trackers': {
+      description: '可选 tracker 地址列表，每行一个；将与站点默认 tracker 合并去重。',
+      type: 'string[]',
+    },
+    'preview': {
+      description: '设为 true 时仅生成临时预览链接（10 分钟后过期），不会实际发布到 RSS、搜索和前端页面。',
+      type: 'boolean',
+      default: 'false',
+    },
+  }}
+/>
+
+<Callout type="info">
+  `torrent` 种子文件**必填**（multipart）。`magnetBase64` 可选——不提供时后端会从种子文件解析出磁力链接。
+</Callout>
+
+## 预览模式
+
+发布前想先看看渲染效果（标题解析、Markdown 备注、磁力是否正确），把 `preview=true` 即可：
+
+```bash title="预览，不公开"
+curl -X POST 'https://site.anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'bgmId=400602' \
+  -F 'title=[字幕组] 葬送的芙莉莲 - 01 [1080p].mkv' \
+  -F 'preview=true' \
+  -F 'torrent=@/path/to/release.torrent'
+```
+
+返回的预览 URL **10 分钟后过期**，**不会**进入 RSS / 搜索 / 前端列表。适合自动化流水线在正式发布前做最后一次人工确认。
+
+## 鉴权与 Key 管理
+
+<Steps>
+  <Step>
+    ### 在字幕组后台生成 API Key
+    每个字幕组可独立生成多个 Key，建议为 CI / 个人脚本各申请一把。
+  </Step>
+  <Step>
+    ### 在请求头携带
+    ```http
+    Authorization: Bearer <YOUR_API_KEY>
+    ```
+  </Step>
+  <Step>
+    ### Key 泄露立即重置
+    旧 Key 立即失效；新 Key 只在生成时显示一次，请妥善保存。
+  </Step>
+</Steps>
+
+<Callout type="warn">
+  Key 不要写进客户端代码、不要 commit 到仓库、不要贴 issue。CI 必须用 secret 注入。
+</Callout>
+
+## 常见错误
+
+| HTTP | 原因                                              | 处理                                                          |
+| ---- | ------------------------------------------------- | ------------------------------------------------------------- |
+| 400  | `title` / `bgmId` 缺失，或 `torrent` 解析失败       | 检查必填项；确认上传的是合法 .torrent 文件                       |
+| 401  | `Authorization` 头缺失或格式错误                    | `Bearer ` 前缀必填，注意空格                                    |
+| 403  | API Key 无效 / 已撤销 / 不属于该字幕组              | 重新生成 Key                                                  |
+| 409  | 同一 infoHash 已经发布过                           | 想替换请用 `version=v2` 重发                                   |
+| 413  | 种子文件 / 表单超过大小限制                         | 压缩种子（裁剪 tracker 列表）                                   |
+| 429  | 写入配额耗尽                                       | 按响应头 `Retry-After` 退避                                    |
+
+下一步：发完直接订阅 [`/rss/anime.xml`](/docs/open-api/rss-anime) 验证；找 bgmId 用 [Bangumi 搜索](/docs/open-api/bgm-search)；想看自己字幕组的统计走 [`/api/subtitle-groups/me`](/docs/open-api/me)。

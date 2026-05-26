@@ -1,0 +1,115 @@
+---
+title: Bangumi search
+description: GET /api/bgm/search — public Bangumi subject lookup. Supports Chinese, English, Japanese, and romaji keywords.
+---
+
+`/api/bgm/search` is a **public** endpoint with no auth required. Use it to map "the title a user typed" to a stable Bangumi.tv subject id (`bgmId`) before passing it to [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/api/releases/publish`](/docs/open-api/releases-publish).
+
+## Request
+
+```txt title="URL"
+GET https://site.anibt.net/api/bgm/search?q=<keyword>&limit=<n>
+```
+
+Any of Chinese, English, Japanese, or romaji works.
+
+```bash title="curl"
+curl -s -G 'https://site.anibt.net/api/bgm/search' \
+  --data-urlencode 'q=葬送的芙莉莲' -d 'limit=3'
+```
+
+## Query parameters
+
+<TypeTable
+  type={{
+    'q': {
+      description: 'Keyword. Any of CN / EN / JP / romaji. Use --data-urlencode in curl so the encoding is correct.',
+      type: 'string',
+      required: true,
+    },
+    'limit': {
+      description: 'Number of results, default 5, capped at 20.',
+      type: 'integer',
+      default: '5',
+    },
+  }}
+/>
+
+## Response
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "data": [
+    {
+      "bgmId": 400602,
+      "name": "葬送のフリーレン",
+      "nameCn": "葬送的芙莉莲",
+      "date": "2023-09-29",
+      "image": "https://...",
+      "rating": 8.5,
+      "totalEpisodes": 28,
+      "url": "https://bgm.tv/subject/400602"
+    }
+  ]
+}
+```
+
+## Field reference
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi.tv subject id — the canonical bgmId used everywhere else in this API.',
+      type: 'number',
+    },
+    'name': {
+      description: 'Original title (typically Japanese).',
+      type: 'string',
+    },
+    'nameCn': {
+      description: 'Chinese title.',
+      type: 'string',
+    },
+    'date': {
+      description: 'First-air date (YYYY-MM-DD).',
+      type: 'string',
+    },
+    'image': {
+      description: 'Cover image URL.',
+      type: 'url',
+    },
+    'rating': {
+      description: '0–10 from Bangumi user ratings; null when unrated.',
+      type: 'number | null',
+    },
+    'totalEpisodes': {
+      description: 'Total episodes. Movies may report 1.',
+      type: 'number',
+    },
+    'url': {
+      description: 'Bangumi.tv subject page URL.',
+      type: 'url',
+    },
+  }}
+/>
+
+## Practical: search → build an RSS URL
+
+```bash title="One-liner"
+BGM=$(curl -s -G 'https://site.anibt.net/api/bgm/search' \
+  --data-urlencode 'q=Frieren' -d 'limit=1' \
+  | jq -r '.data[0].bgmId')
+
+echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
+```
+
+## Notes
+
+<Callout type="info">
+  Results are sorted by Bangumi's internal relevance, **not** popularity. For ambiguous titles (multiple seasons, identical names, etc.) raise `limit` and let the user pick.
+</Callout>
+
+<Callout type="warn">
+  This endpoint pass-throughs upstream Bangumi data, so result quality depends on Bangumi itself. In production code, cache the resolved `bgmId` locally — don't query on every request.
+</Callout>

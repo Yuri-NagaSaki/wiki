@@ -1,0 +1,63 @@
+---
+title: Tracker
+description: AniBT official tracker announce URL — add it to the torrent file when publishing.
+---
+
+When publishing a torrent, add the official **HTTPS tracker announce** URL below to the torrent file.
+
+```txt title="Official tracker"
+https://tracker.anibt.net/announce
+```
+
+<Callout type="info">
+  HTTPS gives the best compatibility — it punches through most corporate / school firewalls and proxies.
+</Callout>
+
+## Adding it in popular BT clients
+
+<Tabs items={['qBittorrent', 'Transmission', 'mktorrent']}>
+  <Tab value="qBittorrent">
+    When creating a new torrent (**Tools → Torrent Creator**):
+    1. Pick the source file or folder.
+    2. Paste this into the **Tracker URLs** list:
+       ```txt
+       https://tracker.anibt.net/announce
+       ```
+    3. Click **Create Torrent**.
+
+    To add the tracker to an existing torrent: right-click → **Edit trackers...** → paste a new line and save.
+  </Tab>
+  <Tab value="Transmission">
+    GUI: right-click the torrent → **Properties** → **Trackers** panel → **Add**, then paste:
+    ```txt
+    https://tracker.anibt.net/announce
+    ```
+
+    CLI:
+    ```bash
+    transmission-remote -t <id> --tracker-add 'https://tracker.anibt.net/announce'
+    ```
+  </Tab>
+  <Tab value="mktorrent">
+    For a new torrent, use `-a`:
+    ```bash
+    mktorrent -a 'https://tracker.anibt.net/announce' -o release.torrent /path/to/release/
+    ```
+
+    Repeat `-a` for multiple trackers.
+  </Tab>
+</Tabs>
+
+## When publishing via API
+
+[`/api/releases/publish`](/docs/open-api/releases-publish) **automatically appends the site default tracker** to magnet links emitted in `<enclosure>`, so you **don't need to** include it in the request body again. Other trackers already inside your torrent are kept as-is — the backend merges + de-duplicates.
+
+## Why HTTPS
+
+- **Better reachability**: corporate / campus / mobile networks often block UDP. HTTPS rides on port 443 with TLS, so it's the least likely to be filtered.
+- **Privacy**: tracker traffic is encrypted and resists casual on-path snooping.
+- **Consistent with RSS**: the AniBT RSS endpoints are HTTPS-only, so the whole pipeline stays on TLS.
+
+<Callout type="warn">
+  Don't ship public torrents with **only** the AniBT tracker — multi-tracker is what keeps a swarm reachable. Pair the AniBT tracker with one or two well-known public trackers (e.g. OpenTrackr).
+</Callout>

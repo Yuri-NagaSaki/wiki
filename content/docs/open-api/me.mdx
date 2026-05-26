@@ -1,0 +1,104 @@
+---
+title: 字幕组自身信息
+description: GET /api/subtitle-groups/me —— 用 API Key 查询当前字幕组的基本信息与统计数据。
+---
+
+`/api/subtitle-groups/me` 是**鉴权读取**端点。带上字幕组 API Key，返回该字幕组的基本信息（名称、slug、简介、网站）和统计数据（发布数、覆盖番剧数、成员数）。
+
+适合用在：CI 启动时打印当前用哪把 Key 跑、控制台 dashboard 展示字幕组当前状态、自动化脚本里做"是不是登在正确字幕组"的最小校验。
+
+## 请求
+
+```http title="HTTP"
+GET https://site.anibt.net/api/subtitle-groups/me
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+```bash title="curl 示例"
+curl -H "Authorization: Bearer <YOUR_API_KEY>" \
+  https://site.anibt.net/api/subtitle-groups/me
+```
+
+## 响应
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "data": {
+    "_id": "...",
+    "name": "My Group",
+    "slug": "my-group",
+    "description": "...",
+    "website": "https://...",
+    "stats": {
+      "totalReleases": 42,
+      "totalAnimes": 10,
+      "memberCount": 5
+    },
+    "status": "active",
+    "createdAt": 1700000000000
+  }
+}
+```
+
+## 字段说明
+
+<TypeTable
+  type={{
+    '_id': {
+      description: '内部主键。第三方一律使用 slug，不要硬编码 _id。',
+      type: 'string',
+    },
+    'name': {
+      description: '字幕组展示名（中英不限，可能随运营调整）。',
+      type: 'string',
+    },
+    'slug': {
+      description: 'URL 安全的稳定标识，与 /api/subtitle-groups 返回的 slug 完全一致，可直接喂给 /rss/anime.xml?groupSlug=…。',
+      type: 'string',
+    },
+    'description': {
+      description: '字幕组简介。',
+      type: 'string',
+    },
+    'website': {
+      description: '字幕组站外主页。',
+      type: 'string?',
+    },
+    'stats.totalReleases': {
+      description: '总发布数。',
+      type: 'number',
+    },
+    'stats.totalAnimes': {
+      description: '覆盖番剧数。',
+      type: 'number',
+    },
+    'stats.memberCount': {
+      description: '当前活跃成员数。',
+      type: 'number',
+    },
+    'status': {
+      description: 'active / hidden / banned 等。仅 active 状态可发布。',
+      type: 'enum',
+    },
+    'createdAt': {
+      description: '字幕组首次入库时间（毫秒）。',
+      type: 'number',
+    },
+  }}
+/>
+
+## 与公共目录的关系
+
+<Callout type="info">
+  与 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差别：
+  - `/api/subtitle-groups`：**公开**，返回**所有**字幕组的精简信息，不需要鉴权。
+  - `/api/subtitle-groups/me`：**鉴权**，只返回**调用方**这一组的详细信息，附带 `stats` 与内部 `_id`、`description`、`status`。
+</Callout>
+
+## 错误响应
+
+| HTTP | 原因                            | 处理                            |
+| ---- | ------------------------------- | ------------------------------- |
+| 401  | `Authorization` 头缺失或格式错误 | `Bearer ` 前缀必填，注意空格      |
+| 403  | API Key 无效 / 已撤销           | 在后台重新生成                  |

@@ -1,0 +1,63 @@
+---
+title: Tracker 地址
+description: AniBT 官方 Tracker Announce 地址，发布种子时请将其加入种子文件。
+---
+
+发布种子时请将以下 **HTTPS Tracker Announce** 地址添加到种子文件中。
+
+```txt title="官方 Tracker"
+https://tracker.anibt.net/announce
+```
+
+<Callout type="info">
+  HTTPS 兼容性更好，可穿透大多数防火墙与公司网络代理。
+</Callout>
+
+## 在常见 BT 客户端添加
+
+<Tabs items={['qBittorrent', 'Transmission', 'mktorrent']}>
+  <Tab value="qBittorrent">
+    新建种子时（**Tools → Torrent Creator**）：
+    1. 选好源文件 / 文件夹。
+    2. 在 **Tracker URLs** 列表里粘贴：
+       ```txt
+       https://tracker.anibt.net/announce
+       ```
+    3. 点 **Create Torrent**。
+
+    给已存在的种子追加 tracker：右键种子 → **Edit trackers...** → 粘贴一行后保存。
+  </Tab>
+  <Tab value="Transmission">
+    GUI：右键种子 → **Properties** → **Trackers** 面板 → **Add**，粘贴：
+    ```txt
+    https://tracker.anibt.net/announce
+    ```
+
+    CLI：
+    ```bash
+    transmission-remote -t <id> --tracker-add 'https://tracker.anibt.net/announce'
+    ```
+  </Tab>
+  <Tab value="mktorrent">
+    生成新种子时直接用 `-a` 指定：
+    ```bash
+    mktorrent -a 'https://tracker.anibt.net/announce' -o release.torrent /path/to/release/
+    ```
+
+    多个 tracker 写多个 `-a` 即可。
+  </Tab>
+</Tabs>
+
+## 通过 API 发布时
+
+[`/api/releases/publish`](/docs/open-api/releases-publish) 在生成磁力链接的 RSS `<enclosure>` 时，会**自动附加站点默认 tracker**，所以你**不需要**在请求体里再传一遍。如果你的种子里已经包含其他自有 tracker，原样保留即可——后端做去重合并。
+
+## 为什么用 HTTPS
+
+- **穿透更好**：公司 / 校园 / 移动网络常封 UDP，HTTPS 在 443 端口走 TLS，被封概率最低。
+- **隐私**：tracker 流量加密，少受中间网络嗅探。
+- **与 RSS 一致**：本站 RSS 永远走 HTTPS，整条链路统一。
+
+<Callout type="warn">
+  请**不要**在公开种子里只放本站 tracker——多 tracker 才能保证可用性。常见做法：本站 + 1–2 个公开 tracker（如 OpenTrackr）。
+</Callout>

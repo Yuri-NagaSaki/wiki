@@ -1,0 +1,104 @@
+---
+title: 字幕組自身資訊
+description: GET /api/subtitle-groups/me —— 用 API Key 查詢當前字幕組的基本資訊與統計資料。
+---
+
+`/api/subtitle-groups/me` 是**鑑權讀取**端點。帶上字幕組 API Key，返回該字幕組的基本資訊（名稱、slug、簡介、網站）和統計資料（釋出數、覆蓋番劇數、成員數）。
+
+適合用在：CI 啟動時列印當前用哪把 Key 跑、控制檯 dashboard 展示字幕組當前狀態、自動化指令碼里做"是不是登在正確字幕組"的最小校驗。
+
+## 請求
+
+```http title="HTTP"
+GET https://site.anibt.net/api/subtitle-groups/me
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+```bash title="curl 示例"
+curl -H "Authorization: Bearer <YOUR_API_KEY>" \
+  https://site.anibt.net/api/subtitle-groups/me
+```
+
+## 響應
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "data": {
+    "_id": "...",
+    "name": "My Group",
+    "slug": "my-group",
+    "description": "...",
+    "website": "https://...",
+    "stats": {
+      "totalReleases": 42,
+      "totalAnimes": 10,
+      "memberCount": 5
+    },
+    "status": "active",
+    "createdAt": 1700000000000
+  }
+}
+```
+
+## 欄位說明
+
+<TypeTable
+  type={{
+    '_id': {
+      description: '內部主鍵。第三方一律使用 slug，不要硬編碼 _id。',
+      type: 'string',
+    },
+    'name': {
+      description: '字幕組展示名（中英不限，可能隨運營調整）。',
+      type: 'string',
+    },
+    'slug': {
+      description: 'URL 安全的穩定標識，與 /api/subtitle-groups 返回的 slug 完全一致，可直接餵給 /rss/anime.xml?groupSlug=…。',
+      type: 'string',
+    },
+    'description': {
+      description: '字幕組簡介。',
+      type: 'string',
+    },
+    'website': {
+      description: '字幕組站外主頁。',
+      type: 'string?',
+    },
+    'stats.totalReleases': {
+      description: '總髮布數。',
+      type: 'number',
+    },
+    'stats.totalAnimes': {
+      description: '覆蓋番劇數。',
+      type: 'number',
+    },
+    'stats.memberCount': {
+      description: '當前活躍成員數。',
+      type: 'number',
+    },
+    'status': {
+      description: 'active / hidden / banned 等。僅 active 狀態可釋出。',
+      type: 'enum',
+    },
+    'createdAt': {
+      description: '字幕組首次入庫時間（毫秒）。',
+      type: 'number',
+    },
+  }}
+/>
+
+## 與公共目錄的關係
+
+<Callout type="info">
+  與 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差別：
+  - `/api/subtitle-groups`：**公開**，返回**所有**字幕組的精簡資訊，不需要鑑權。
+  - `/api/subtitle-groups/me`：**鑑權**，只返回**呼叫方**這一組的詳細資訊，附帶 `stats` 與內部 `_id`、`description`、`status`。
+</Callout>
+
+## 錯誤響應
+
+| HTTP | 原因                            | 處理                            |
+| ---- | ------------------------------- | ------------------------------- |
+| 401  | `Authorization` 頭缺失或格式錯誤 | `Bearer ` 字首必填，注意空格      |
+| 403  | API Key 無效 / 已撤銷           | 在後臺重新生成                  |

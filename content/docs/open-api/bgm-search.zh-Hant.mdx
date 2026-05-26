@@ -1,0 +1,115 @@
+---
+title: Bangumi 搜尋
+description: GET /api/bgm/search —— 公開搜尋 Bangumi 番劇 ID，支援中 / 英 / 日 / 羅馬音關鍵詞。
+---
+
+`/api/bgm/search` 是**公開**搜尋端點，無需鑑權。用於把"使用者輸入的番劇名"對映成穩定的 Bangumi.tv subject id（`bgmId`），後續就能餵給 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/api/releases/publish`](/docs/open-api/releases-publish)。
+
+## 請求
+
+```txt title="URL"
+GET https://site.anibt.net/api/bgm/search?q=<keyword>&limit=<n>
+```
+
+支援中文、英文、日文、羅馬音任意關鍵詞。
+
+```bash title="curl 示例"
+curl -s -G 'https://site.anibt.net/api/bgm/search' \
+  --data-urlencode 'q=葬送的芙莉蓮' -d 'limit=3'
+```
+
+## 查詢引數
+
+<TypeTable
+  type={{
+    'q': {
+      description: '關鍵詞。支援中 / 英 / 日 / 羅馬音。建議用 --data-urlencode 讓 curl 自動編碼。',
+      type: 'string',
+      required: true,
+    },
+    'limit': {
+      description: '返回條數，預設 5，上限 20。',
+      type: 'integer',
+      default: '5',
+    },
+  }}
+/>
+
+## 響應
+
+```jsonc title="200 OK"
+{
+  "ok": true,
+  "data": [
+    {
+      "bgmId": 400602,
+      "name": "葬送のフリーレン",
+      "nameCn": "葬送的芙莉蓮",
+      "date": "2023-09-29",
+      "image": "https://...",
+      "rating": 8.5,
+      "totalEpisodes": 28,
+      "url": "https://bgm.tv/subject/400602"
+    }
+  ]
+}
+```
+
+## 欄位說明
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi.tv subject id。這是後續所有介面裡用作 bgmId 引數的唯一權威值。',
+      type: 'number',
+    },
+    'name': {
+      description: '原始名（通常日文）。',
+      type: 'string',
+    },
+    'nameCn': {
+      description: '中文譯名。',
+      type: 'string',
+    },
+    'date': {
+      description: '首播日期（YYYY-MM-DD）。',
+      type: 'string',
+    },
+    'image': {
+      description: '封面圖 URL。',
+      type: 'url',
+    },
+    'rating': {
+      description: '0–10，Bangumi 使用者評分。未評分為 null。',
+      type: 'number | null',
+    },
+    'totalEpisodes': {
+      description: '總集數。劇場版可能為 1。',
+      type: 'number',
+    },
+    'url': {
+      description: 'Bangumi.tv 詳情頁 URL。',
+      type: 'url',
+    },
+  }}
+/>
+
+## 實戰：搜尋 → 拼 RSS
+
+```bash title="一行打出 bgmId 給 RSS 用"
+BGM=$(curl -s -G 'https://site.anibt.net/api/bgm/search' \
+  --data-urlencode 'q=葬送的芙莉蓮' -d 'limit=1' \
+  | jq -r '.data[0].bgmId')
+
+echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
+```
+
+## 注意事項
+
+<Callout type="info">
+  搜尋結果按 Bangumi 內部相關度排序，**不**保證第一條就是最熱門版本。如果番名容易撞車（例如有多季 / 同名作品），建議把 `limit` 設大一點，再人工挑選。
+</Callout>
+
+<Callout type="warn">
+  這是**外部資料透傳**介面，結果質量直接受 Bangumi 上游影響。生產程式碼裡建議把 `bgmId` 快取到本地，不要每次都查。
+</Callout>

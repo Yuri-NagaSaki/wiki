@@ -1,0 +1,187 @@
+---
+title: Publish a release
+description: POST /api/releases/publish — the authenticated write endpoint groups use to upload torrents; supports JSON (magnet) and multipart/form-data (torrent file).
+---
+
+`/api/releases/publish` is the only **write** endpoint a release group uses. Authenticate by passing the group's API key in the request header. Both `application/json` (magnet link) and `multipart/form-data` (torrent file upload) are supported.
+
+<Callout type="warn">
+  This is a **write endpoint**: rate limits and quotas are tracked per group, separate from the IP-based RSS rate window. Rotate the key immediately if it leaks.
+</Callout>
+
+## URL
+
+```http title="HTTP"
+POST https://site.anibt.net/api/releases/publish
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+## Two request shapes
+
+<Tabs items={['multipart/form-data (recommended)', 'application/json']}>
+  <Tab value="multipart/form-data (recommended)">
+    Upload the torrent and the backend **automatically extracts** the magnet, infoHash, and file size from it.
+
+    ```bash title="Upload a torrent"
+    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'bgmId=400602' \
+      -F 'title=[Group] Frieren - 01 [1080p].mkv' \
+      -F 'episodeKey=01' \
+      -F 'resolution=1080p' \
+      -F 'language=CHS' -F 'language=JP' \
+      -F 'subtitle=EXTERNAL' \
+      -F 'format=MKV' \
+      -F 'torrent=@/path/to/release.torrent'
+    ```
+
+    Repeat `language` to send multiple values (CHS + JP).
+  </Tab>
+  <Tab value="application/json">
+    Send the magnet link directly (you still need a torrent on disk — only well-formed magnets are accepted).
+
+    ```bash title="JSON body"
+    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json' \
+      --data @- <<'JSON'
+    {
+      "bgmId": 400602,
+      "title": "[Group] Frieren - 01 [1080p].mkv",
+      "magnetBase64": "magnet:?xt=urn:btih:...",
+      "episodeKey": "01",
+      "resolution": "1080p",
+      "language": ["CHS", "JP"],
+      "subtitle": "EXTERNAL",
+      "format": "MKV",
+      "fileSize": 734003200,
+      "notes": "**Fonts embedded**, dropped frames fixed."
+    }
+    JSON
+    ```
+
+    `magnetBase64` accepts both the raw magnet URL and a Base64-encoded magnet.
+  </Tab>
+</Tabs>
+
+## Parameters
+
+<TypeTable
+  type={{
+    'bgmId': {
+      description: 'Bangumi subject id. Look it up via /api/bgm/search.',
+      type: 'number',
+      required: true,
+    },
+    'title': {
+      description: 'Filename of the release, e.g. [Group] Show - 01 [1080p].mkv.',
+      type: 'string',
+      required: true,
+    },
+    'torrent': {
+      description: 'Torrent file (required for multipart). Magnet, title, file size, and infoHash are auto-extracted.',
+      type: 'file',
+      required: true,
+    },
+    'magnetBase64': {
+      description: 'Optional. Raw magnet URL or its Base64 encoding. Auto-extracted from the torrent if omitted.',
+      type: 'string',
+    },
+    'episodeKey': {
+      description: 'Episode label, e.g. 01 / 01-13 / BATCH / SP / MOVIE / OVA.',
+      type: 'string',
+    },
+    'resolution': {
+      description: '2160p / 1080p / 720p / 480p / 360p.',
+      type: 'enum',
+    },
+    'language': {
+      description: 'CHS / CHT / JP / EN, repeatable, up to 4 values.',
+      type: 'enum[]',
+    },
+    'subtitle': {
+      description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE.',
+      type: 'enum',
+    },
+    'format': {
+      description: 'MKV / MP4 / AVI / WEBM.',
+      type: 'enum',
+    },
+    'version': {
+      description: 'Version string, e.g. v1, v2, used to re-publish a corrected release.',
+      type: 'string',
+    },
+    'fileSize': {
+      description: 'File size in bytes; auto-extracted from the torrent.',
+      type: 'number',
+    },
+    'notes': {
+      description: 'Release notes — Markdown is supported.',
+      type: 'string',
+    },
+    'trackers': {
+      description: 'Optional list of tracker URLs (one per line). Merged + de-duplicated with site defaults.',
+      type: 'string[]',
+    },
+    'preview': {
+      description: 'When true, only a temporary preview URL is generated (expires in 10 minutes); the release is NOT published to RSS / search / public pages.',
+      type: 'boolean',
+      default: 'false',
+    },
+  }}
+/>
+
+<Callout type="info">
+  `torrent` is **required** in multipart requests. `magnetBase64` is optional — when omitted, the backend extracts it from the torrent.
+</Callout>
+
+## Preview mode
+
+To verify how a release will render (title parsing, Markdown notes, magnet correctness) before going public, set `preview=true`:
+
+```bash title="Preview only — not published"
+curl -X POST 'https://site.anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'bgmId=400602' \
+  -F 'title=[Group] Frieren - 01 [1080p].mkv' \
+  -F 'preview=true' \
+  -F 'torrent=@/path/to/release.torrent'
+```
+
+The returned preview URL **expires in 10 minutes** and **does not** show up in RSS / search / public listings. Useful as the last manual gate in an automated pipeline.
+
+## Authentication & key management
+
+<Steps>
+  <Step>
+    ### Generate an API key in the group dashboard
+    Each group can have multiple keys; consider one for CI and one for ad-hoc scripts.
+  </Step>
+  <Step>
+    ### Send it on every request
+    ```http
+    Authorization: Bearer <YOUR_API_KEY>
+    ```
+  </Step>
+  <Step>
+    ### Rotate immediately on leak
+    The previous key is revoked instantly; the new key is shown only once at generation, so save it carefully.
+  </Step>
+</Steps>
+
+<Callout type="warn">
+  Never embed keys in client-side code, commit them to a repo, or paste them in issues. Inject through CI secrets only.
+</Callout>
+
+## Common errors
+
+| HTTP | Cause                                                  | Fix                                                            |
+| ---- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| 400  | Missing `title` / `bgmId`, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
+| 401  | `Authorization` missing or malformed                    | The `Bearer ` prefix (with a space) is mandatory                |
+| 403  | API key invalid / revoked / does not belong to the group | Generate a new key                                              |
+| 409  | A release with the same infoHash already exists         | To replace, re-publish with `version=v2`                        |
+| 413  | Torrent / form too large                                | Trim the tracker list inside the torrent and retry              |
+| 429  | Write quota exhausted                                   | Back off using `Retry-After` from the response                  |
+
+Next: subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) right after to verify; find a `bgmId` via [Bangumi search](/docs/open-api/bgm-search); inspect your group via [`/api/subtitle-groups/me`](/docs/open-api/me).
