@@ -39,6 +39,14 @@ export default async function RootLayout({
 
   return (
     <html lang={lang} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'globalThis.__name||=(t,n)=>Object.defineProperty(t,"name",{value:n,configurable:!0});',
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col">
         <RootProvider i18n={i18nProvider(translations, lang)}>
           {children}
