@@ -1,0 +1,77 @@
+---
+title: Personal subscription RSS
+description: GET /rss/subscriptions.xml — your "My subscriptions" panel rolled up into one personal RSS feed. Requires login.
+---
+
+`/rss/subscriptions.xml` merges every show / release group / quality filter you have selected in the AniBT "My subscriptions" panel into **one** personal RSS feed — drop it into a BT client or RSS reader and you're done.
+
+Unlike [`/rss/anime.xml`](/docs/open-api/rss-anime) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints), which are **public**, this feed is **per-user**, so it requires authentication.
+
+<Callout type="info">
+  The subscriptions themselves are configured in the web UI: pick shows, pick groups, set quality / language filters. This endpoint just **exports the current state** as RSS.
+</Callout>
+
+## Request
+
+```http title="HTTP"
+GET https://anibt.net/rss/subscriptions.xml
+```
+
+You must be **logged in** to access it:
+
+- In a browser: log in once and the link will download directly.
+- In a BT client / RSS reader: copy the personal subscription URL (with its signed parameters / token) from your account dashboard and paste the full URL into the client.
+
+The exact token / auth header format is whatever the user dashboard hands out; treat it as opaque and **don't hard-code** any specific URL shape into long-running scripts — copy the latest URL from the dashboard instead.
+
+<Callout type="warn">
+  The URL embeds your identity. **Do not** post it in issues, screenshots, public repos, or chat groups. Reset it from the dashboard immediately if it leaks.
+</Callout>
+
+## Response
+
+Standard RSS 2.0, identical in shape to [`/rss/anime.xml`](/docs/open-api/rss-anime): each `<item>` is a single release with magnet `<enclosure>`, file size, group, episode, etc. The only difference is **which** items get included — that is decided by your subscriptions.
+
+```xml title="Excerpt"
+<rss version="2.0">
+  <channel>
+    <title>AniBT - My subscriptions</title>
+    <link>https://anibt.net/subscriptions</link>
+    <description>Merged from 12 subscription entries</description>
+    <item>
+      <title>[Group A] Show - 01 [1080p][CHS&JP].mkv</title>
+      <link>https://anibt.net/release/...</link>
+      <pubDate>...</pubDate>
+      <enclosure url="magnet:?xt=urn:btih:..." length="734003200" type="application/x-bittorrent" />
+    </item>
+    ...
+  </channel>
+</rss>
+```
+
+## Caching & latency
+
+- **Private content**: response carries `Cache-Control: private`, so CDNs **never** cache it shared. You always get the latest state.
+- **Polling**: 5–10 minutes is plenty for BT clients. Per-user throttling is in place; faster polling will be rate-limited.
+- **ETag**: returned and respected via `If-None-Match` (304), so you don't re-download unchanged content.
+
+See [Caching](/docs/open-api/caching) and [Limits](/docs/open-api/limits) for details.
+
+## Compared to public RSS
+
+| Dimension     | `/rss/anime.xml` / `/rss/group/<slug>.xml` | `/rss/subscriptions.xml`                |
+| ------------- | ------------------------------------------ | --------------------------------------- |
+| Auth          | None                                       | Required (token or session cookie)      |
+| Source        | One show / one group                       | All your selections, merged             |
+| Cache         | Shared CDN                                 | Private, no shared CDN                  |
+| Best for      | Following one show / one group             | One feed for **everything** you watch   |
+
+## Common errors
+
+| HTTP | Cause                                            | Fix                                       |
+| ---- | ------------------------------------------------ | ----------------------------------------- |
+| 401  | Not logged in / credentials expired               | Log in again, or re-copy the URL from dashboard |
+| 403  | Credentials revoked / user banned                 | Contact site staff                         |
+| 429  | Polling too aggressively                          | Back off (≥ 5 min between polls)           |
+
+Next: wiring it into a client → [Integration examples](/docs/open-api/examples). Following a public show → [`/rss/anime.xml`](/docs/open-api/rss-anime).

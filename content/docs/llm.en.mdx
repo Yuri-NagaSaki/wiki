@@ -1,0 +1,106 @@
+---
+title: LLM integration
+description: AniBT Wiki ships llms.txt, llms-full.txt, and per-page Markdown endpoints so any LLM / Agent / RAG system can ingest the entire site.
+---
+
+The Wiki exposes its full contents as LLM-friendly Markdown so you can pull it into ChatGPT / Claude / Cursor / your own RAG pipeline as authoritative context. Pick whichever endpoint fits.
+
+## Endpoints
+
+<Cards>
+  <Card
+    title="/llms.txt"
+    href="/llms.txt"
+    description="An llmstxt.org-style index: site title plus a link list of every page."
+  />
+  <Card
+    title="/llms-full.txt"
+    href="/llms-full.txt"
+    description="Every zh-CN page concatenated into one Markdown blob — drop the whole thing into a model."
+  />
+  <Card
+    title="/llms-full.en.txt"
+    href="/llms-full.en.txt"
+    description="Same, but in English. Prefer this when feeding international LLMs."
+  />
+  <Card
+    title="<page>.md"
+    href="/en/docs/open-api.md"
+    description="Append .md to any doc to get its raw Markdown. e.g. /en/docs/open-api.md"
+  />
+</Cards>
+
+## Usage
+
+### ChatGPT / Claude / Gemini chat UIs
+
+Just paste the URL:
+
+```txt
+Use this document as the source for my next questions:
+https://anibt.net/llms-full.en.txt
+```
+
+The model will fetch and load the whole document as context. `llms-full.en.txt` is ~80 KB — well within any major model's window.
+
+### Cursor / Continue / Cline (IDE agents)
+
+Add the index as a custom doc source. Cursor's `@Docs` accepts:
+
+```txt
+https://anibt.net/llms.txt
+```
+
+It will expand the index and pull the per-page `.md` files on demand.
+
+### RAG / custom pipelines
+
+```python title="Crawl the whole site for embeddings"
+import requests, re
+
+base = 'https://anibt.net'
+index = requests.get(f'{base}/llms.txt').text
+
+# Each (link) in llms.txt is one page; append .md to the path to get the source.
+urls = re.findall(r'\(([^)]+)\)', index)
+for path in urls:
+    if not path.startswith('/docs'):
+        continue
+    md = requests.get(f'{base}/en{path}.md').text
+    # → feed into your chunker / embedder
+```
+
+Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for the default zh-CN.
+
+## Endpoint comparison
+
+| Endpoint                 | Content                       | Best for                            |
+| ------------------------ | ----------------------------- | ----------------------------------- |
+| `/llms.txt`              | TOC + links (a few KB)         | Sitemap for agents that fetch lazily |
+| `/llms-full.txt`         | All zh-CN content (~80 KB)    | One-shot ingestion into a CN LLM    |
+| `/llms-full.en.txt`      | All English content           | International LLMs / English answers |
+| `/<lang>/docs/<slug>.md` | Single page Markdown source   | Citing or quoting one specific page |
+
+<Callout type="info">
+  All endpoints are **fully static** with `Cache-Control: s-maxage=31536000`. After a Wiki update lands, a rebuild refreshes them within a few minutes.
+</Callout>
+
+## Coverage
+
+The same pages you're reading now:
+
+- Site sync workflows
+- [Open API](/docs/open-api) (RSS / JSON / caching / limits / troubleshooting)
+- [Tracker URL](/docs/tracker)
+- [Related projects](/docs/projects)
+
+Any page can be served as Markdown by appending `.md`:
+
+```txt
+HTML page    https://anibt.net/en/docs/open-api/rss-anime
+Markdown     https://anibt.net/en/docs/open-api/rss-anime.md
+```
+
+## License
+
+Content is licensed CC-BY-SA. When citing it from an LLM / Agent / RAG output, please **keep a link back to the original page**.

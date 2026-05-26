@@ -7,6 +7,7 @@ import { InlineTOC } from 'fumadocs-ui/components/inline-toc';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
+import { GithubInfo, ProjectCard } from '@/components/project-card';
 import type { ComponentProps } from 'react';
 import type { MDXComponents } from 'mdx/types';
 
@@ -29,6 +30,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Tab,
     Tabs,
     TypeTable,
+    GithubInfo,
+    ProjectCard,
     ...components,
   };
 }

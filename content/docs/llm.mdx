@@ -1,0 +1,106 @@
+---
+title: LLM 对接
+description: AniBT Wiki 提供 llms.txt、llms-full.txt 与每页 Markdown 端点，方便外部 LLM / Agent / RAG 系统抓取整站内容做问答与代码生成。
+---
+
+AniBT Wiki 内容全部对外暴露成 LLM 友好的 Markdown 资源，方便你用 ChatGPT / Claude / Cursor / 自建 RAG 系统直接拉取整站文档当上下文。下面四种端点按需选用。
+
+## 端点一览
+
+<Cards>
+  <Card
+    title="/llms.txt"
+    href="/llms.txt"
+    description="按 llmstxt.org 标准生成的索引：Wiki 标题 + 全部页面的链接列表。"
+  />
+  <Card
+    title="/llms-full.txt"
+    href="/llms-full.txt"
+    description="把 zh-CN 全部页面拼成一份 Markdown 大文件，可一次性扔给 LLM。"
+  />
+  <Card
+    title="/llms-full.en.txt"
+    href="/llms-full.en.txt"
+    description="同上，英文版。喂给国际模型时优先用这个。"
+  />
+  <Card
+    title="<page>.md"
+    href="/zh-CN/docs/open-api.md"
+    description="任意一篇文档加 .md 后缀就能拿到它的纯 Markdown 源，例：/zh-CN/docs/open-api.md"
+  />
+</Cards>
+
+## 用法示例
+
+### ChatGPT / Claude / Gemini 的 Web UI
+
+直接把 URL 贴进对话即可：
+
+```txt
+请基于这份文档回答我后续的问题：
+https://anibt.net/llms-full.en.txt
+```
+
+模型会拉取并把整份文档进上下文。`llms-full.en.txt` ~80 KB，对主流大模型来说一次喂完没问题。
+
+### Cursor / Continue / Cline 等 IDE Agent
+
+把 `.md` 端点配成"自定义文档"。Cursor 的 `@Docs` 也吃这种格式：
+
+```txt
+https://anibt.net/llms.txt
+```
+
+它会自动展开索引、按需抓取每篇 `.md`。
+
+### RAG / 自建 pipeline
+
+```python title="拉取整站做向量化"
+import requests, re
+
+base = 'https://anibt.net'
+index = requests.get(f'{base}/llms.txt').text
+
+# llms.txt 里每行的 (link) 就是一篇文档；加上 .md 后缀就是源
+urls = re.findall(r'\(([^)]+)\)', index)
+for path in urls:
+    if not path.startswith('/docs'):
+        continue
+    md = requests.get(f'{base}/zh-CN{path}.md').text
+    # → 喂进你的 chunker / embedder
+```
+
+如果你只关心英文，把语言段换成 `/en` 即可（默认 zh-CN 不带前缀，英文是 `/en`，繁体是 `/zh-Hant`）。
+
+## 端点对比
+
+| 端点                    | 内容                            | 推荐用途                          |
+| ----------------------- | ------------------------------- | --------------------------------- |
+| `/llms.txt`             | 站点目录 + 链接（数 KB）         | 给 Agent 当 sitemap，按需抓取     |
+| `/llms-full.txt`        | 全部 zh-CN 内容（约 80 KB）     | 一次性喂中文 LLM                   |
+| `/llms-full.en.txt`     | 全部英文内容                    | 喂国际 LLM / 写英文回答           |
+| `/<lang>/docs/<slug>.md`| 单页源 Markdown                | 精准引用某一篇                    |
+
+<Callout type="info">
+  这些端点都是**纯静态产物**，缓存 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新发布后会重新构建，几分钟内端点跟着更新。
+</Callout>
+
+## 内容覆盖
+
+`/llms.txt` 与 `/llms-full.*` 的来源就是你正在看的这份 Wiki：
+
+- 站点同步流程
+- [公开 API](/docs/open-api)（RSS / JSON / 缓存 / 限流 / 故障排查）
+- [Tracker 地址](/docs/tracker)
+- [相关项目](/docs/projects)
+
+任何一篇 Wiki 页面都可以加 `.md` 拿到源。例如：
+
+```txt
+原始页面     https://anibt.net/zh-CN/docs/open-api/rss-anime
+Markdown 源  https://anibt.net/zh-CN/docs/open-api/rss-anime.md
+```
+
+## 协议与署名
+
+文档采用 CC-BY-SA。在 LLM / Agent / RAG 输出里引用时，**保留指向原页面的链接**即可。
