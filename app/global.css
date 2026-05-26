@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, color-mix(in oklch, var(--fd-primary) 14%, transparent), transparent 34rem),
+    var(--fd-background);
+}
+
+.anibt-hero {
+  background:
+    linear-gradient(120deg, color-mix(in oklch, var(--fd-primary) 12%, transparent), transparent 42%),
+    color-mix(in oklch, var(--fd-card) 96%, var(--fd-primary));
+}

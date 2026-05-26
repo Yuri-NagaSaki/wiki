@@ -1,0 +1,47 @@
+---
+title: 萌番组同步填写
+description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名称和 Team ID。
+---
+
+## 第一步
+
+打开网站 [https://bangumi.moe](https://bangumi.moe)，首先要 **退出登录** 并 **刷新网页**。
+
+按 <kbd>F12</kbd> 打开 DevTools，点到 **Network（网络）** 页面。这里要注意，一定要开启 **录制网络日志**。
+
+当录制按钮为 **红色** 时，就代表已经开启录制。
+
+![DevTools Network 录制网络日志](/images/site-sync/bangumi-network-recording.webp)
+
+然后输入账号密码，点击登录。
+
+## 第二步
+
+查看 DevTools 的 **Network（网络）** 页面。
+
+这里会有一个名为 **`disqus`** 的文件，点击它。
+
+![Network 中的 disqus 请求](/images/site-sync/bangumi-disqus-request.webp)
+
+右边会出现一个窗口，点到 **Headers（标头）** 页面。默认通常就在这个页面。
+
+然后往下滑，找到 **Request Headers（请求标头）** 下的 **Cookie**，全选那一长串内容。
+
+**注意：千万不要手滑选到下方 priority 的 `u=1, i`。**
+
+![复制 Request Headers 里的 Cookie](/images/site-sync/bangumi-cookie-header.webp)
+
+将这一长串 Cookie 复制下来，回到 AniBT 并粘贴保存。
+
+![在 AniBT 中粘贴 Cookie](/images/site-sync/bangumi-anibt-cookie-save.webp)
+
+关于下方的 **发布身份名称** 和 **Team ID**：
+
+- **发布身份名称**：填写你在萌番组的团队名（组名）。如果你没有申请团队注册，则不用填写。
+- **Team ID**：可以不填。不填也可以同步。
+
+填写完后，保存并测试连接。
+
+如果显示 **连接成功**，说明已经配置完成。如果显示 **连接失败**，需要重新检查 Cookie 是否复制完整、账号是否已登录成功。
+
+![测试连接成功](/images/site-sync/bangumi-connection-success.webp)
