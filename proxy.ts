@@ -4,5 +4,5 @@ import { createI18nMiddleware } from 'fumadocs-core/i18n/middleware';
 export default createI18nMiddleware(i18n);
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images).*)'],
+  matcher: ['/((?!api|_next|images|.*\\..*).*)'],
 };
