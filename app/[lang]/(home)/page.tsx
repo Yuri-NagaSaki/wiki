@@ -4,14 +4,14 @@ import Link from 'next/link';
 
 const copy = {
   zh: {
-    tagline: '面向使用者与字幕组维护者的手册',
-    enter: '进入文档',
-    site: '主站',
+    tagline: '给字幕组与追番人的小册子',
+    enter: '翻开手册',
+    site: '回到 AniBT',
   },
   en: {
-    tagline: 'Handbook for users and subtitle teams',
-    enter: 'Enter docs',
-    site: 'Main site',
+    tagline: 'A field notebook for fansubbers and trackers',
+    enter: 'Open the handbook',
+    site: 'Back to AniBT',
   },
 } as const;
 
@@ -25,14 +25,23 @@ export default async function HomePage({
 
   return (
     <main className="anibt-home">
-      <div className="anibt-home-card">
-        <img
-          src="/favicon.png"
-          alt=""
-          className="anibt-home-logo"
-          aria-hidden="true"
-        />
-        <h1 className="anibt-home-title">AniBT Wiki</h1>
+      <div className="anibt-home-bg" aria-hidden="true">
+        <div className="anibt-home-grid" />
+        <div className="anibt-home-glow anibt-home-glow-a" />
+        <div className="anibt-home-glow anibt-home-glow-b" />
+        <div className="anibt-home-ring" />
+      </div>
+
+      <div className="anibt-home-stage">
+        <span className="anibt-home-tick" aria-hidden="true" />
+
+        <h1 className="anibt-home-title">
+          <span>Ani</span>
+          <em>BT</em>
+          <span>Wiki</span>
+          <i className="anibt-home-title-dot" aria-hidden="true" />
+        </h1>
+
         <p className="anibt-home-tagline">{t.tagline}</p>
 
         <div className="anibt-home-actions">
