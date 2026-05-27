@@ -1,0 +1,74 @@
+---
+title: Site Sync
+description: Configure AniBT release sync for Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
+---
+
+Site sync pushes a release you publish on AniBT to the external sites you have configured, reducing duplicate uploads and manual upkeep.
+
+<Callout type="info">
+  Complete [Apply for admission](/docs/apply) first, then open your subtitle group's sync settings in AniBT. Each external site stores its own credentials.
+</Callout>
+
+## Setup Flow
+
+<Steps>
+  <Step>
+    ### Choose the sites to sync
+
+    Open the sync settings in the AniBT subtitle group dashboard and enable the external sites you actually maintain.
+  </Step>
+
+  <Step>
+    ### Prepare the matching credentials
+
+    Use the cheat sheet below to open the relevant guide and copy the required Cookie, API Token, UID, username, or password fields.
+  </Step>
+
+  <Step>
+    ### Save and test the connection
+
+    Save the configuration in AniBT, then test the connection before publishing real releases.
+  </Step>
+</Steps>
+
+## Choose a Guide
+
+<Cards>
+  <Card title="Bangumi Moe Sync" href="/docs/site-sync/bangumi" description="Copy the login Cookie, publishing identity name, and Team ID." />
+  <Card title="Mikan Sync" href="/docs/site-sync/mikan" description="Enter the API Token and let AniBT auto-query the IDs." />
+  <Card title="DMHY Sync" href="/docs/site-sync/dmhy" description="Enter your username, password, and subtitle group name." />
+  <Card title="ACGNX Sync" href="/docs/site-sync/acgnx" description="Copy the UID and API Token." />
+  <Card title="ACG.rip Sync" href="/docs/site-sync/acgrip" description="Copy the API Token from the dashboard." />
+  <Card title="Nyaa Sync" href="/docs/site-sync/nyaa" description="Copy the session Cookie and add the required prefix." />
+</Cards>
+
+## Credential Cheat Sheet
+
+<TypeTable
+  type={{
+    'Bangumi Moe': {
+      description: 'Requires the login Cookie, publishing identity name, and Team ID; copy the Cookie from the Network request during a fresh login.',
+      type: 'Cookie',
+    },
+    'Mikan': {
+      description: 'Usually only the API Token is required; AniBT can auto-query the publish group and release group IDs.',
+      type: 'API Token',
+    },
+    'DMHY': {
+      description: 'Requires your username, password, and the subtitle group name you use on DMHY.',
+      type: 'username + password',
+    },
+    'ACGNX': {
+      description: 'Requires UID and API Token from the account API settings page.',
+      type: 'UID + API Token',
+    },
+    'ACG.rip': {
+      description: 'Requires only the API Token; do not include the `tpx://acg.rip/` prefix.',
+      type: 'API Token',
+    },
+    'Nyaa': {
+      description: 'Requires the session Cookie; add the `session=` prefix manually when pasting it into AniBT.',
+      type: 'Cookie',
+    },
+  }}
+/>

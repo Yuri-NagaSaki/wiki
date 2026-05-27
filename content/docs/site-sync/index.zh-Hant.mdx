@@ -1,0 +1,74 @@
+---
+title: 站點同步
+description: 把 AniBT 釋出同步到萌番組、Mikan、動漫花園、末日站、ACG.rip 與 Nyaa 的配置入口。
+---
+
+站點同步會在你透過 AniBT 釋出資源後，把同一條釋出推送到已配置的外部站點，減少重複上傳與手動維護。
+
+<Callout type="info">
+  使用前需要先完成 [申請入駐](/docs/apply)，並在 AniBT 後台進入字幕組的同步設定；每個外部站點都需要單獨儲存憑據。
+</Callout>
+
+## 配置流程
+
+<Steps>
+  <Step>
+    ### 選擇要同步的站點
+
+    在 AniBT 字幕組後台開啟同步設定，先啟用你實際維護的外部站點。
+  </Step>
+
+  <Step>
+    ### 準備對應憑據
+
+    按下方速查表進入對應文件，複製 Cookie、API Token、UID 或帳號密碼等必需欄位。
+  </Step>
+
+  <Step>
+    ### 儲存並測試連線
+
+    在 AniBT 中儲存配置後，優先點選測試連線；確認通過後再釋出正式資源。
+  </Step>
+</Steps>
+
+## 選擇具體教程
+
+<Cards>
+  <Card title="萌番組同步" href="/docs/site-sync/bangumi" description="複製登入 Cookie、釋出身份名稱和 Team ID。" />
+  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填寫 API Token，並讓 AniBT 自動查詢 ID。" />
+  <Card title="動漫花園同步" href="/docs/site-sync/dmhy" description="填寫帳號、密碼和字幕組名稱。" />
+  <Card title="末日站同步" href="/docs/site-sync/acgnx" description="複製 UID 與 API Token。" />
+  <Card title="ACG.rip 同步" href="/docs/site-sync/acgrip" description="複製儀表板中的 API Token。" />
+  <Card title="Nyaa 同步" href="/docs/site-sync/nyaa" description="複製 session Cookie 並補上前綴。" />
+</Cards>
+
+## 憑據速查
+
+<TypeTable
+  type={{
+    '萌番組': {
+      description: '需要登入 Cookie、釋出身份名稱和 Team ID；Cookie 必須從重新登入時的 Network 請求中複製。',
+      type: 'Cookie',
+    },
+    'Mikan': {
+      description: '通常只需要 API Token，AniBT 會自動查詢字幕組 ID 與釋出組 ID。',
+      type: 'API Token',
+    },
+    '動漫花園': {
+      description: '需要帳號、密碼和你在動漫花園使用的字幕組名稱。',
+      type: '帳號密碼',
+    },
+    '末日站': {
+      description: '需要 UID 與 API Token，站名 ACGNX 在中文文件裡仍稱「末日站」。',
+      type: 'UID + API Token',
+    },
+    'ACG.rip': {
+      description: '只需要 API Token，複製時不要帶 `tpx://acg.rip/` 前綴。',
+      type: 'API Token',
+    },
+    'Nyaa': {
+      description: '需要 session Cookie；貼上到 AniBT 時要手動補上 `session=` 前綴。',
+      type: 'Cookie',
+    },
+  }}
+/>
