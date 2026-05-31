@@ -1,0 +1,149 @@
+---
+title: 釋出其他類資源
+description: POST /api/other-releases/publish —— 字幕組用 API Key 釋出漫畫、音樂、RAW、舞台劇資源；不綁定 bgmId。
+---
+
+`/api/other-releases/publish` 是字幕組釋出**非番劇資源**的寫入端點，適用於漫畫、音樂、RAW、舞台劇。它使用同一套字幕組 API Key 鑑權，但不需要 `bgmId`，也不會混入番劇釋出列表。
+
+<Callout type="warn">
+  這是**寫入介面**。Key 外洩會允許別人以你的字幕組名義釋出其他類資源；請只在服務端腳本或 CI secret 中使用。
+</Callout>
+
+## URL
+
+```http title="HTTP"
+POST https://site.anibt.net/api/other-releases/publish
+Authorization: Bearer <YOUR_API_KEY>
+```
+
+也支援 `X-API-Key: <YOUR_API_KEY>`，但推薦統一使用 `Authorization: Bearer`。
+
+## 兩種請求格式
+
+<Tabs items={['multipart/form-data（推薦）', 'application/json']}>
+  <Tab value="multipart/form-data（推薦）">
+    上傳 `.torrent` 檔案，後端會自動提取磁力連結、標題、檔案大小和 tracker。`category` 與 `title` 仍建議顯式傳入。
+
+    ```bash title="上傳其他類種子"
+    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'category=manga' \
+      -F 'title=Example Manga Vol.01' \
+      -F 'customTags=電子版,中文' \
+      -F 'notes=釋出說明支援 Markdown。' \
+      -F 'torrent=@/path/to/release.torrent'
+    ```
+
+    `customTags` / `tags` 在表單裡用逗號分隔；`trackers` 用換行或 JSON 陣列字串。
+  </Tab>
+  <Tab value="application/json">
+    直接提交磁力連結，適合已有磁力但沒有上傳種子檔案的自動化流程。
+
+    ```bash title="JSON 請求"
+    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -H 'Content-Type: application/json' \
+      --data @- <<'JSON'
+    {
+      "category": "music",
+      "title": "Example Album FLAC",
+      "magnetLink": "magnet:?xt=urn:btih:...",
+      "fileSize": 734003200,
+      "customTags": ["FLAC", "BK"],
+      "notes": "**無損音源**，含 BK。"
+    }
+    JSON
+    ```
+
+    `magnetBase64` 也可使用；它既接受原始 magnet，也接受 Base64 編碼後的 magnet。
+  </Tab>
+</Tabs>
+
+## 參數
+
+<TypeTable
+  type={{
+    'category': {
+      description: '資源分類：manga / music / raw / stage。',
+      type: 'enum',
+      required: true,
+    },
+    'title': {
+      description: '資源標題，最長 500 字元。詳情頁和 RSS item 標題都會使用它。',
+      type: 'string',
+      required: true,
+    },
+    'torrent': {
+      description: '種子檔案（multipart）。提供後會自動上傳到公共 R2，並提取磁力連結、檔案大小和 tracker。',
+      type: 'file',
+    },
+    'magnetLink': {
+      description: '原始 magnet 連結。可與 torrent 同傳；tracker 會合併去重。',
+      type: 'string',
+    },
+    'magnetBase64': {
+      description: '原始 magnet 或 Base64 編碼 magnet。與 magnetLink 二選一即可。',
+      type: 'string',
+    },
+    'torrentStorageId': {
+      description: '已上傳到本站公共儲存的種子檔案 key，通常只給內部自動化使用。',
+      type: 'string',
+    },
+    'fileSize': {
+      description: '檔案大小（位元組）。上傳 torrent 或 magnet 帶 xl 參數時可自動推斷。',
+      type: 'number',
+    },
+    'trackers': {
+      description: '附加 tracker 列表；JSON 用陣列，表單用換行分隔。',
+      type: 'string[]',
+    },
+    'notes': {
+      description: '釋出頁說明，支援 Markdown。',
+      type: 'string',
+    },
+    'descriptionMarkdown': {
+      description: 'notes 的相容別名。content / description / intro 也會被相容為說明文字。',
+      type: 'string',
+    },
+    'customTags': {
+      description: '自定義標籤，最多 20 個，每個最長 80 字元；表單用逗號分隔。',
+      type: 'string[]',
+    },
+    'tags': {
+      description: 'customTags 的相容別名。',
+      type: 'string[]',
+    },
+  }}
+/>
+
+<Callout type="info">
+  `category` 和 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一個。
+</Callout>
+
+## 返回
+
+```json title="成功回應"
+{
+  "ok": true,
+  "result": {
+    "releaseId": "orel_DYXiEZs5KMep",
+    "groupId": "org_xxx",
+    "category": "manga",
+    "createdTorrentFileKey": "torrent/..."
+  }
+}
+```
+
+`releaseId` 可拼成詳情頁：`https://anibt.net/other-release/<releaseId>`。釋出後對應分類的 RSS 會出現新條目，見 [其他類 RSS](/docs/open-api/rss-other)。
+
+## 常見錯誤
+
+| HTTP | 原因                                             | 處理                                                   |
+| ---- | ------------------------------------------------ | ------------------------------------------------------ |
+| 400  | 缺少 `category` / `title`，或沒有任何種子 / 磁力來源 | 補齊必填項；確認 `category` 是四個允許值之一              |
+| 401  | 未傳 API Key                                      | 加上 `Authorization: Bearer <YOUR_API_KEY>`             |
+| 403  | API Key 無效、已撤銷，或使用者已不在字幕組          | 在字幕組後台重新生成 Key，確認成員權限                   |
+| 404  | `torrentStorageId` 指向的檔案不存在                | 改用 multipart 上傳，或確認檔案 key 屬於該字幕組          |
+| 429  | 寫入頻率過高                                      | 按回應標頭和錯誤資訊退避                                |
+
+下一步：訂閱分類 RSS 用 [`/rss/other/<category>.xml`](/docs/open-api/rss-other)；番劇資源仍走 [`/api/releases/publish`](/docs/open-api/releases-publish)。

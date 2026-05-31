@@ -1,0 +1,121 @@
+---
+title: 其他类 RSS
+description: GET /rss/other/<category>.xml —— 漫画、音乐、RAW、舞台剧各自独立的 RSS，不混入主 RSS。
+---
+
+`/rss/other/<category>.xml` 输出其他类资源的独立 RSS。当前支持 `manga`、`music`、`raw`、`stage` 四个分类，对应漫画、音乐、RAW、舞台剧。
+
+<Callout type="warn">
+  其他类资源**不会**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番剧详情页 RSS。需要订阅这些资源时，请直接使用本页的分类 RSS。
+</Callout>
+
+## URL
+
+```txt title="分类 RSS"
+https://anibt.net/rss/other/manga.xml
+https://anibt.net/rss/other/music.xml
+https://anibt.net/rss/other/raw.xml
+https://anibt.net/rss/other/stage.xml
+```
+
+## 查询参数
+
+<TypeTable
+  type={{
+    'limit': {
+      description: '返回条数，1..200，默认 100。',
+      type: 'integer',
+      default: '100',
+    },
+    'q': {
+      description: '关键词搜索。别名：search。',
+      type: 'string',
+    },
+    'search': {
+      description: 'q 的别名。',
+      type: 'string',
+    },
+    'groupId': {
+      description: '字幕组组织 ID。发布 API 返回的 groupId 可直接用于过滤。',
+      type: 'string',
+    },
+    'sortField': {
+      description: 'publishedAt / fileSize，默认 publishedAt。',
+      type: 'enum',
+      default: 'publishedAt',
+    },
+    'sortOrder': {
+      description: 'desc / asc，默认 desc。',
+      type: 'enum',
+      default: 'desc',
+    },
+  }}
+/>
+
+## 示例
+
+<Steps>
+  <Step>
+    ### 订阅漫画最新发布
+    ```txt title="漫画"
+    https://anibt.net/rss/other/manga.xml
+    ```
+  </Step>
+  <Step>
+    ### 搜索音乐分类
+    ```txt title="音乐 + 关键词"
+    https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
+    ```
+  </Step>
+  <Step>
+    ### 按文件大小排序 RAW
+    ```txt title="RAW + 文件大小"
+    https://anibt.net/rss/other/raw.xml?sortField=fileSize&sortOrder=desc
+    ```
+  </Step>
+</Steps>
+
+## 响应
+
+返回标准 RSS 2.0。每个 `<item>` 包含：
+
+<TypeTable
+  type={{
+    '<title>': {
+      description: '资源标题；如果有字幕组名，会显示为 [字幕组] 标题。',
+      type: 'string',
+    },
+    '<link>': {
+      description: '其他类资源详情页（/other-release/<id>）。',
+      type: 'url',
+    },
+    '<guid isPermaLink="false">': {
+      description: '稳定 other release id。',
+      type: 'string',
+    },
+    '<pubDate>': {
+      description: 'RFC 822 时间。',
+      type: 'datetime',
+    },
+    '<description>': {
+      description: 'CDATA，包含分类、字幕组、文件大小、下载链接、说明和标签。',
+      type: 'string',
+    },
+    '<enclosure>': {
+      description: '种子下载 URL，type="application/x-bittorrent"。仅上传过种子文件的条目会有。',
+      type: 'url',
+    },
+    '<torrent>': {
+      description: 'RSS 内的 torrent 元信息；有 magnet 时会包含 infoHash。',
+      type: 'element',
+    },
+  }}
+/>
+
+## 缓存与索引
+
+- RSS 响应支持 `ETag` / `If-None-Match`，未变更时返回 `304 Not Modified`。
+- 共享缓存头为 `s-maxage=120`，并启用长时间 `stale-while-revalidate` / `stale-if-error`。
+- 这些 RSS 响应会带 `noindex, follow` 搜索引擎策略，避免分类 feed 被搜索引擎索引。
+
+继续：[发布其他类资源](/docs/open-api/other-releases-publish)；番剧主 RSS 见 [RSS 主入口](/docs/open-api/rss-anime)。

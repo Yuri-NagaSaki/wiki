@@ -1,0 +1,121 @@
+---
+title: Other release RSS
+description: GET /rss/other/<category>.xml — separate RSS feeds for manga, music, RAW, and stage releases; not mixed into the main RSS.
+---
+
+`/rss/other/<category>.xml` exports dedicated RSS feeds for other release categories. The supported categories are `manga`, `music`, `raw`, and `stage`.
+
+<Callout type="warn">
+  Other releases are **not** mixed into `/rss/magnets.xml`, `/rss/anime.xml`, or anime detail RSS feeds. Subscribe to the category feeds on this page when you need them.
+</Callout>
+
+## URLs
+
+```txt title="Category RSS"
+https://anibt.net/rss/other/manga.xml
+https://anibt.net/rss/other/music.xml
+https://anibt.net/rss/other/raw.xml
+https://anibt.net/rss/other/stage.xml
+```
+
+## Query parameters
+
+<TypeTable
+  type={{
+    'limit': {
+      description: 'Number of items, 1..200, default 100.',
+      type: 'integer',
+      default: '100',
+    },
+    'q': {
+      description: 'Keyword search. Alias: search.',
+      type: 'string',
+    },
+    'search': {
+      description: 'Alias for q.',
+      type: 'string',
+    },
+    'groupId': {
+      description: 'Release group organization ID. The groupId returned by the publish API can be used here.',
+      type: 'string',
+    },
+    'sortField': {
+      description: 'publishedAt / fileSize, default publishedAt.',
+      type: 'enum',
+      default: 'publishedAt',
+    },
+    'sortOrder': {
+      description: 'desc / asc, default desc.',
+      type: 'enum',
+      default: 'desc',
+    },
+  }}
+/>
+
+## Examples
+
+<Steps>
+  <Step>
+    ### Latest manga releases
+    ```txt title="Manga"
+    https://anibt.net/rss/other/manga.xml
+    ```
+  </Step>
+  <Step>
+    ### Search music releases
+    ```txt title="Music + keyword"
+    https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
+    ```
+  </Step>
+  <Step>
+    ### Sort RAW by file size
+    ```txt title="RAW + file size"
+    https://anibt.net/rss/other/raw.xml?sortField=fileSize&sortOrder=desc
+    ```
+  </Step>
+</Steps>
+
+## Response
+
+Returns standard RSS 2.0. Each `<item>` contains:
+
+<TypeTable
+  type={{
+    '<title>': {
+      description: 'Release title. If a group name is available, it is formatted as [Group] Title.',
+      type: 'string',
+    },
+    '<link>': {
+      description: 'Other release detail page (/other-release/<id>).',
+      type: 'url',
+    },
+    '<guid isPermaLink="false">': {
+      description: 'Stable other release id.',
+      type: 'string',
+    },
+    '<pubDate>': {
+      description: 'RFC 822 datetime.',
+      type: 'datetime',
+    },
+    '<description>': {
+      description: 'CDATA with category, group, file size, download link, notes, and tags.',
+      type: 'string',
+    },
+    '<enclosure>': {
+      description: 'Torrent download URL with type="application/x-bittorrent". Present only for items with an uploaded torrent file.',
+      type: 'url',
+    },
+    '<torrent>': {
+      description: 'Torrent metadata inside RSS; includes infoHash when a magnet is available.',
+      type: 'element',
+    },
+  }}
+/>
+
+## Cache and indexing
+
+- Responses support `ETag` / `If-None-Match`; unchanged feeds return `304 Not Modified`.
+- Shared cache uses `s-maxage=120` with long `stale-while-revalidate` / `stale-if-error` windows.
+- These RSS responses use a `noindex, follow` search engine policy so category feeds are not indexed.
+
+Continue: [Publish other releases](/docs/open-api/other-releases-publish). The anime RSS main entry is [RSS main entry](/docs/open-api/rss-anime).

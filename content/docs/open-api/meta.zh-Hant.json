@@ -6,10 +6,12 @@
     "me",
     "bgm-search",
     "rss-anime",
+    "rss-other",
     "rss-subscriptions",
     "other-endpoints",
     "examples",
     "releases-publish",
+    "other-releases-publish",
     "caching",
     "limits",
     "troubleshooting"
